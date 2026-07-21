@@ -3,6 +3,7 @@ import { Game } from '../game/Game';
 import type { PerformanceMonitor } from '../performance/PerformanceMonitor';
 import type { ArmorType, Cell, Impact, Projectile, Tower, TowerId } from '../types';
 import { AssetStore, TOWER_SPRITE_ASSETS, type RenderAssetId } from './assets';
+import { getOrderedPathMasks, sampleOrderedPath } from './autotile';
 
 interface Metrics {
   width: number;
@@ -14,12 +15,9 @@ interface Metrics {
   boardHeight: number;
 }
 
-interface TerrainTheme {
-  grass: RenderAssetId;
-  concrete: RenderAssetId;
-  grassFallback: string;
-  concreteFallback: string;
-}
+const TERRAIN_ATLAS_CORE = 256;
+const TERRAIN_ATLAS_GUTTER = 4;
+const TERRAIN_ATLAS_PITCH = TERRAIN_ATLAS_CORE + TERRAIN_ATLAS_GUTTER * 2;
 
 export class Renderer {
   private context: CanvasRenderingContext2D;
@@ -120,6 +118,7 @@ export class Renderer {
     ctx.rect(0, 0, metrics.boardWidth, metrics.boardHeight);
     ctx.clip();
     const overlayMark = this.profiler?.beginPhase('overlay') ?? Number.NaN;
+    if (this.game.phase === 'build') this.drawPathFlow(metrics, time);
     if (this.game.selectedBuild) this.drawPlacementGrid(metrics);
     this.drawSelectedRange(metrics);
     this.profiler?.endPhase('overlay', overlayMark);
@@ -245,31 +244,6 @@ export class Renderer {
     };
   }
 
-  private getTerrainTheme(): TerrainTheme {
-    if (this.game.level.id === 'gauntlet') {
-      return {
-        grass: 'grass-lush',
-        concrete: 'concrete-panel',
-        grassFallback: '#173229',
-        concreteFallback: '#30373a',
-      };
-    }
-    if (this.game.level.id === 'crosscut') {
-      return {
-        grass: 'grass-trimmed',
-        concrete: 'concrete-light',
-        grassFallback: '#27533b',
-        concreteFallback: '#8f999c',
-      };
-    }
-    return {
-      grass: 'grass-lush',
-      concrete: 'concrete-light',
-      grassFallback: '#1e4933',
-      concreteFallback: '#899398',
-    };
-  }
-
   private makePattern(assetId: RenderAssetId, targetSize: number, offsetX = 0, offsetY = 0): CanvasPattern | null {
     const image = this.assets.get(assetId);
     if (!image) return null;
@@ -282,126 +256,58 @@ export class Renderer {
 
   private drawBackdrop({ width, height, cell }: Metrics): void {
     const ctx = this.context;
-    const theme = this.getTerrainTheme();
-    const grass = this.makePattern(theme.grass, Math.max(180, cell * 4.2));
-    ctx.fillStyle = grass ?? theme.grassFallback;
+    const grass = this.makePattern('terrain-cute-grass', Math.max(420, cell * 8.5));
+    ctx.fillStyle = grass ?? '#a9d83f';
     ctx.fillRect(0, 0, width, height);
 
-    ctx.fillStyle = 'rgba(3, 10, 9, 0.28)';
+    ctx.fillStyle = 'rgba(47, 91, 29, 0.08)';
     ctx.fillRect(0, 0, width, height);
-    const glow = ctx.createRadialGradient(width * 0.42, height * 0.42, 0, width * 0.42, height * 0.42, Math.max(width, height) * 0.78);
-    glow.addColorStop(0, 'rgba(185, 230, 217, 0.08)');
-    glow.addColorStop(0.64, 'rgba(16, 28, 26, 0.02)');
-    glow.addColorStop(1, 'rgba(2, 7, 7, 0.52)');
+    const glow = ctx.createRadialGradient(width * 0.48, height * 0.44, 0, width * 0.48, height * 0.44, Math.max(width, height) * 0.78);
+    glow.addColorStop(0, 'rgba(255, 255, 235, 0.08)');
+    glow.addColorStop(0.68, 'rgba(78, 119, 42, 0.025)');
+    glow.addColorStop(1, 'rgba(34, 69, 27, 0.2)');
     ctx.fillStyle = glow;
     ctx.fillRect(0, 0, width, height);
   }
 
   private drawTerrain({ boardWidth, boardHeight, cell, originX, originY }: Metrics): void {
     const ctx = this.context;
-    const theme = this.getTerrainTheme();
-    const grass = this.makePattern(theme.grass, cell * 4.2, -originX, -originY);
-    ctx.fillStyle = grass ?? theme.grassFallback;
+    const grass = this.makePattern('terrain-cute-grass', cell * 8.5, -originX, -originY);
+    ctx.fillStyle = grass ?? '#addb41';
     ctx.fillRect(0, 0, boardWidth, boardHeight);
 
-    for (let y = 0; y < this.game.level.rows; y += 1) {
-      for (let x = 0; x < this.game.level.cols; x += 1) {
-        if (this.game.isPathCell({ x, y })) continue;
-        const noise = this.hash(x, y);
-        ctx.fillStyle = noise > 0.52 ? 'rgba(205, 238, 221, 0.025)' : 'rgba(3, 18, 12, 0.035)';
-        ctx.fillRect(x * cell, y * cell, cell, cell);
-        if (noise > 0.865 && !this.game.towers.some((tower) => tower.cell.x === x && tower.cell.y === y)) {
-          this.drawTerrainProp(x, y, cell, noise);
-        }
-      }
-    }
-
     const gradient = ctx.createRadialGradient(boardWidth * 0.48, boardHeight * 0.45, 0, boardWidth * 0.48, boardHeight * 0.45, boardWidth * 0.72);
-    gradient.addColorStop(0, 'rgba(230,255,245,0.025)');
-    gradient.addColorStop(1, 'rgba(0,8,6,0.16)');
+    gradient.addColorStop(0, 'rgba(255, 255, 235, 0.055)');
+    gradient.addColorStop(0.76, 'rgba(255, 255, 235, 0)');
+    gradient.addColorStop(1, 'rgba(52, 93, 30, 0.09)');
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, boardWidth, boardHeight);
   }
 
-  private drawTerrainProp(gridX: number, gridY: number, cell: number, noise: number): void {
+  private drawPath({ cell }: Metrics): void {
     const ctx = this.context;
-    const image = this.assets.get('terrain-rock-fern');
-    const x = (gridX + 0.5) * cell;
-    const y = (gridY + 0.53) * cell;
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate((noise - 0.5) * 1.6);
-    if (image) {
-      const size = cell * (0.62 + (noise - 0.865) * 1.1);
-      ctx.globalAlpha = 0.88;
-      ctx.drawImage(image, -size / 2, -size / 2, size, size);
+    const atlas = this.assets.get('terrain-cute-atlas');
+    const masks = getOrderedPathMasks(this.game.level.path);
+
+    if (atlas) {
+      this.game.level.path.forEach((pathCell, index) => {
+        const mask = masks[index];
+        const sourceX = (mask % 4) * TERRAIN_ATLAS_PITCH + TERRAIN_ATLAS_GUTTER;
+        const sourceY = Math.floor(mask / 4) * TERRAIN_ATLAS_PITCH + TERRAIN_ATLAS_GUTTER;
+        ctx.drawImage(
+          atlas,
+          sourceX,
+          sourceY,
+          TERRAIN_ATLAS_CORE,
+          TERRAIN_ATLAS_CORE,
+          pathCell.x * cell,
+          pathCell.y * cell,
+          cell + 0.35,
+          cell + 0.35,
+        );
+      });
     } else {
-      ctx.fillStyle = 'rgba(22, 34, 30, 0.72)';
-      ctx.strokeStyle = 'rgba(135, 153, 148, 0.45)';
-      ctx.lineWidth = Math.max(1, cell * 0.018);
-      ctx.beginPath();
-      ctx.moveTo(-cell * 0.2, cell * 0.13);
-      ctx.lineTo(-cell * 0.08, -cell * 0.16);
-      ctx.lineTo(cell * 0.19, -cell * 0.07);
-      ctx.lineTo(cell * 0.23, cell * 0.15);
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
-    }
-    ctx.restore();
-  }
-
-  private drawPath({ cell, originX, originY }: Metrics): void {
-    const ctx = this.context;
-    const theme = this.getTerrainTheme();
-    const concrete = this.makePattern(theme.concrete, cell * 3.25, -originX, -originY);
-    ctx.fillStyle = concrete ?? theme.concreteFallback;
-    for (const pathCell of this.game.level.path) {
-      const x = pathCell.x * cell;
-      const y = pathCell.y * cell;
-      ctx.fillRect(x, y, cell + 0.35, cell + 0.35);
-      const noise = this.hash(pathCell.x + 41, pathCell.y + 17);
-      ctx.fillStyle = noise > 0.52 ? 'rgba(245,252,253,0.035)' : 'rgba(10,17,19,0.045)';
-      ctx.fillRect(x, y, cell, cell);
-      ctx.fillStyle = concrete ?? theme.concreteFallback;
-    }
-
-    this.drawPathCurbs(cell);
-
-    ctx.strokeStyle = this.game.level.id === 'gauntlet'
-      ? 'rgba(223, 239, 241, 0.28)'
-      : 'rgba(35, 49, 52, 0.34)';
-    ctx.lineWidth = Math.max(1, cell * 0.026);
-    ctx.setLineDash([cell * 0.13, cell * 0.18]);
-    ctx.beginPath();
-    this.game.level.path.forEach((pathCell, index) => {
-      const x = (pathCell.x + 0.5) * cell;
-      const y = (pathCell.y + 0.5) * cell;
-      if (index === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    });
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    for (let index = 2; index < this.game.level.path.length - 1; index += 4) {
-      const previous = this.game.level.path[index - 1];
-      const current = this.game.level.path[index];
-      const angle = Math.atan2(current.y - previous.y, current.x - previous.x);
-      const x = (current.x + 0.5) * cell;
-      const y = (current.y + 0.5) * cell;
-      ctx.save();
-      ctx.translate(x, y);
-      ctx.rotate(angle);
-      ctx.fillStyle = this.game.level.id === 'gauntlet'
-        ? 'rgba(235, 246, 247, 0.42)'
-        : 'rgba(30, 44, 46, 0.42)';
-      ctx.beginPath();
-      ctx.moveTo(cell * 0.15, 0);
-      ctx.lineTo(-cell * 0.08, -cell * 0.09);
-      ctx.lineTo(-cell * 0.08, cell * 0.09);
-      ctx.closePath();
-      ctx.fill();
-      ctx.restore();
+      this.drawFallbackPath(cell);
     }
 
     const start = this.game.level.path[0];
@@ -410,30 +316,36 @@ export class Renderer {
     this.drawEndpoint(end, 'CORE', cell, true);
   }
 
-  private drawPathCurbs(cell: number): void {
+  private drawFallbackPath(cell: number): void {
     const ctx = this.context;
-    const directions = [
-      { dx: 0, dy: -1, x1: 0, y1: 0, x2: 1, y2: 0 },
-      { dx: 1, dy: 0, x1: 1, y1: 0, x2: 1, y2: 1 },
-      { dx: 0, dy: 1, x1: 0, y1: 1, x2: 1, y2: 1 },
-      { dx: -1, dy: 0, x1: 0, y1: 0, x2: 0, y2: 1 },
+    const route = this.game.level.path;
+    const first = route[0];
+    const second = route[1];
+    const beforeLast = route[route.length - 2];
+    const last = route[route.length - 1];
+    const points = [
+      { x: first.x + 0.5 + first.x - second.x, y: first.y + 0.5 + first.y - second.y },
+      ...route.map((pathCell) => ({ x: pathCell.x + 0.5, y: pathCell.y + 0.5 })),
+      { x: last.x + 0.5 + last.x - beforeLast.x, y: last.y + 0.5 + last.y - beforeLast.y },
     ];
-    for (const pathCell of this.game.level.path) {
-      for (const edge of directions) {
-        if (this.game.isPathCell({ x: pathCell.x + edge.dx, y: pathCell.y + edge.dy })) continue;
-        const x = pathCell.x * cell;
-        const y = pathCell.y * cell;
-        ctx.strokeStyle = 'rgba(7, 17, 17, 0.58)';
-        ctx.lineWidth = Math.max(2, cell * 0.085);
-        ctx.beginPath();
-        ctx.moveTo(x + edge.x1 * cell, y + edge.y1 * cell);
-        ctx.lineTo(x + edge.x2 * cell, y + edge.y2 * cell);
-        ctx.stroke();
-        ctx.strokeStyle = 'rgba(217, 230, 229, 0.44)';
-        ctx.lineWidth = Math.max(1, cell * 0.026);
-        ctx.stroke();
-      }
-    }
+
+    const strokeRoute = (color: string, width: number) => {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = cell * width;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      points.forEach((point, index) => {
+        if (index === 0) ctx.moveTo(point.x * cell, point.y * cell);
+        else ctx.lineTo(point.x * cell, point.y * cell);
+      });
+      ctx.stroke();
+    };
+
+    strokeRoute('#6d8f35', 0.68);
+    strokeRoute('#a8d347', 0.62);
+    strokeRoute('#a9936d', 0.52);
+    strokeRoute('#f1ede4', 0.44);
   }
 
   private drawEndpoint(cellPosition: Cell, label: string, cell: number, reverse: boolean): void {
@@ -442,24 +354,52 @@ export class Renderer {
     const y = (cellPosition.y + 0.5) * cell;
     ctx.save();
     ctx.translate(x, y);
-    ctx.fillStyle = 'rgba(8, 15, 16, 0.76)';
-    ctx.strokeStyle = '#eef4f2';
-    ctx.lineWidth = Math.max(1.5, cell * 0.035);
-    ctx.fillRect(-cell * 0.32, -cell * 0.32, cell * 0.64, cell * 0.64);
-    ctx.strokeRect(-cell * 0.32, -cell * 0.32, cell * 0.64, cell * 0.64);
-    ctx.fillStyle = '#eef4f2';
-    ctx.font = `700 ${Math.max(8, cell * 0.15)}px ui-monospace, monospace`;
+    ctx.fillStyle = 'rgba(61, 80, 34, 0.2)';
+    ctx.beginPath();
+    ctx.ellipse(cell * 0.025, cell * 0.09, cell * 0.31, cell * 0.19, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = reverse ? '#f7f1e7' : '#689c35';
+    ctx.strokeStyle = reverse ? '#6f9638' : '#f8f3e8';
+    ctx.lineWidth = Math.max(1.5, cell * 0.045);
+    ctx.beginPath();
+    ctx.roundRect(-cell * 0.3, -cell * 0.2, cell * 0.6, cell * 0.4, cell * 0.14);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = reverse ? '#496d2c' : '#fffaf0';
+    ctx.font = `800 ${Math.max(8, cell * 0.14)}px ui-rounded, system-ui, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(label, 0, 0);
-    ctx.beginPath();
-    const direction = reverse ? -1 : 1;
-    ctx.moveTo(direction * cell * 0.44, 0);
-    ctx.lineTo(direction * cell * 0.31, -cell * 0.08);
-    ctx.lineTo(direction * cell * 0.31, cell * 0.08);
-    ctx.closePath();
-    ctx.fill();
     ctx.restore();
+  }
+
+  private drawPathFlow({ cell }: Metrics, time: number): void {
+    const ctx = this.context;
+    const path = this.game.level.path;
+    const spacing = 3.05;
+    const phase = this.reducedMotion ? 0.9 : (time * 0.00082) % spacing;
+
+    for (let distance = 0.85 + phase; distance < path.length - 1.1; distance += spacing) {
+      const sample = sampleOrderedPath(path, distance);
+      const pulse = this.reducedMotion ? 1 : 0.92 + Math.sin(time * 0.004 + distance) * 0.08;
+      ctx.save();
+      ctx.translate(sample.x * cell, sample.y * cell);
+      ctx.rotate(sample.angle);
+      ctx.globalAlpha = 0.5 * pulse;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = 'rgba(68, 104, 38, 0.72)';
+      ctx.lineWidth = Math.max(3, cell * 0.13);
+      ctx.beginPath();
+      ctx.moveTo(-cell * 0.09, -cell * 0.12);
+      ctx.lineTo(cell * 0.065, 0);
+      ctx.lineTo(-cell * 0.09, cell * 0.12);
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(255, 252, 238, 0.96)';
+      ctx.lineWidth = Math.max(1.5, cell * 0.065);
+      ctx.stroke();
+      ctx.restore();
+    }
   }
 
   private drawPlacementGrid({ boardWidth, boardHeight, cell }: Metrics): void {

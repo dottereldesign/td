@@ -1,26 +1,20 @@
 import type { TowerId } from '../types';
 
 export type RenderAssetId =
-  | 'grass-lush'
-  | 'grass-trimmed'
-  | 'concrete-light'
-  | 'concrete-panel'
+  | 'terrain-cute-grass'
+  | 'terrain-cute-atlas'
   | 'tower-vacuum'
   | 'tower-brush'
   | 'tower-toaster'
-  | 'tower-sprayer'
-  | 'terrain-rock-fern';
+  | 'tower-sprayer';
 
 export const ASSET_URLS: Record<RenderAssetId, string> = {
-  'grass-lush': new URL('../assets/generated/grass-lush.webp', import.meta.url).href,
-  'grass-trimmed': new URL('../assets/generated/grass-trimmed.webp', import.meta.url).href,
-  'concrete-light': new URL('../assets/generated/concrete-light.webp', import.meta.url).href,
-  'concrete-panel': new URL('../assets/generated/concrete-panel.webp', import.meta.url).href,
+  'terrain-cute-grass': new URL('../assets/generated/terrain-cute-grass.webp', import.meta.url).href,
+  'terrain-cute-atlas': new URL('../assets/generated/terrain-cute-atlas.png', import.meta.url).href,
   'tower-vacuum': new URL('../assets/generated/tower-vacuum.png', import.meta.url).href,
   'tower-brush': new URL('../assets/generated/tower-brush.png', import.meta.url).href,
   'tower-toaster': new URL('../assets/generated/tower-toaster.png', import.meta.url).href,
   'tower-sprayer': new URL('../assets/generated/tower-sprayer.png', import.meta.url).href,
-  'terrain-rock-fern': new URL('../assets/generated/terrain-rock-fern.png', import.meta.url).href,
 };
 
 export const TOWER_SPRITE_ASSETS: Partial<Record<TowerId, RenderAssetId>> = {
