@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="MONO//WARD — a monochrome, Warcraft III-inspired browser tower defense prototype."
+    />
+    <meta name="theme-color" content="#111210" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <title>MONO//WARD</title>
+  </head>
+  <body>
+    <div id="app" class="app-shell">
+      <header class="topbar">
+        <button class="brand" id="level-menu-button" type="button" aria-label="Open level select">
+          <span class="brand-mark" aria-hidden="true">MW</span>
+          <span>
+            <strong>MONO//WARD</strong>
+            <small id="level-name">01 — SWITCHBACK</small>
+          </span>
+          <i data-lucide="chevron-down" aria-hidden="true"></i>
+        </button>
+
+        <div class="hud" aria-label="Game status">
+          <div class="hud-stat">
+            <i data-lucide="heart" aria-hidden="true"></i>
+            <span><small>Integrity</small><strong id="lives-value">20</strong></span>
+          </div>
+          <div class="hud-stat">
+            <i data-lucide="coins" aria-hidden="true"></i>
+            <span><small>Credits</small><strong id="cash-value">$420</strong></span>
+          </div>
+          <div class="hud-stat">
+            <i data-lucide="waves" aria-hidden="true"></i>
+            <span><small>Wave</small><strong id="wave-value">0 / 8</strong></span>
+          </div>
+        </div>
+
+        <div class="top-actions">
+          <button class="icon-button" id="sound-button" type="button" aria-label="Mute sound" title="Mute sound">
+            <i data-lucide="volume-2" aria-hidden="true"></i>
+          </button>
+          <button class="icon-button" id="help-button" type="button" aria-label="Open field manual" title="Field manual">
+            <i data-lucide="circle-help" aria-hidden="true"></i>
+          </button>
+        </div>
+      </header>
+
+      <main class="game-layout">
+        <section class="board-panel" aria-label="Tower defense board">
+          <div class="board-frame" id="board-frame">
+            <canvas id="game-canvas" aria-label="Tile map. Select a tower, then click an open tile to build."></canvas>
+            <div class="board-corner board-corner--top"><span id="phase-label">BUILD PHASE</span></div>
+            <div class="board-corner board-corner--bottom"><span id="cursor-readout">GRID 00:00</span></div>
+            <div class="board-prompt" id="board-prompt" role="status">
+              <strong>Select a tower</strong>
+              <span>Use the build roster or press keys 1–6</span>
+            </div>
+          </div>
+
+          <div class="command-bar" aria-label="Wave controls">
+            <div class="wave-brief">
+              <span class="eyebrow">NEXT CONTACT</span>
+              <strong id="next-wave-name">W01 · Soft targets</strong>
+              <span id="next-wave-detail">9 × Unarmored · 0 armor</span>
+            </div>
+            <div class="command-actions">
+              <button class="button button--ghost" id="pause-button" type="button" disabled>
+                <i data-lucide="pause" aria-hidden="true"></i><span>Pause</span>
+              </button>
+              <button class="button button--ghost speed-button" id="speed-button" type="button" title="Cycle speed (F)">
+                <i data-lucide="fast-forward" aria-hidden="true"></i><span>1×</span>
+              </button>
+              <button class="button button--primary" id="wave-button" type="button">
+                <i data-lucide="play" aria-hidden="true"></i><span>Send wave 01</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <aside class="side-panel" aria-label="Build and tower controls">
+          <div class="panel-heading">
+            <div>
+              <span class="eyebrow">BUILD ROSTER</span>
+              <h1>Deploy towers</h1>
+            </div>
+            <span class="key-hint">1—6</span>
+          </div>
+
+          <div id="tower-shop" class="tower-shop"></div>
+
+          <section id="selection-panel" class="selection-panel" hidden aria-live="polite">
+            <div class="selection-heading">
+              <div>
+                <span class="eyebrow">SELECTED UNIT</span>
+                <h2 id="selected-name">Sentry</h2>
+              </div>
+              <button class="icon-button icon-button--small" id="deselect-button" type="button" aria-label="Deselect tower">
+                <i data-lucide="x" aria-hidden="true"></i>
+              </button>
+            </div>
+            <div class="stat-grid">
+              <div><small>Damage</small><strong id="selected-damage">0</strong></div>
+              <div><small>Rate</small><strong id="selected-rate">0/s</strong></div>
+              <div><small>Range</small><strong id="selected-range">0</strong></div>
+              <div><small>Output</small><strong id="selected-output">0</strong></div>
+            </div>
+            <div class="target-row">
+              <span>Priority</span>
+              <div class="segmented" id="target-controls" aria-label="Target priority">
+                <button type="button" data-target="first">First</button>
+                <button type="button" data-target="strong">Strong</button>
+                <button type="button" data-target="last">Last</button>
+              </div>
+            </div>
+            <div class="selection-actions">
+              <button class="button button--primary" id="upgrade-button" type="button">
+                <i data-lucide="arrow-up" aria-hidden="true"></i><span>Upgrade</span><b id="upgrade-cost">$0</b>
+              </button>
+              <button class="button button--ghost" id="sell-button" type="button">
+                <i data-lucide="badge-dollar-sign" aria-hidden="true"></i><span>Sell</span><b id="sell-value">+$0</b>
+              </button>
+            </div>
+          </section>
+
+          <section class="intel-card" id="intel-card">
+            <div class="intel-icon" id="intel-icon" aria-hidden="true">U</div>
+            <div>
+              <span class="eyebrow">ARMOR INTEL</span>
+              <strong id="intel-title">Unarmored contact</strong>
+              <p id="intel-copy">Pierce and siege attacks earn a 1.5× damage bonus.</p>
+            </div>
+          </section>
+        </aside>
+      </main>
+
+      <footer class="footer-bar">
+        <span>ESC cancel · SPACE wave/pause · F speed · U upgrade</span>
+        <span>Offline-ready static prototype · v0.1</span>
+      </footer>
+    </div>
+
+    <div class="modal-backdrop is-open" id="level-modal" role="dialog" aria-modal="true" aria-labelledby="level-modal-title">
+      <section class="modal modal--wide">
+        <div class="modal-topline"><span>FIELD OPERATIONS / LEVEL SELECT</span><span>MW—001</span></div>
+        <div class="modal-heading">
+          <div>
+            <span class="eyebrow">SINGLE PLAYER PROTOTYPE</span>
+            <h2 id="level-modal-title">Choose a sector to defend.</h2>
+            <p>Eight waves. One route. Build counters for each incoming armor class.</p>
+          </div>
+          <div class="modal-emblem" aria-hidden="true">MW</div>
+        </div>
+        <div id="level-grid" class="level-grid"></div>
+        <div class="modal-footer">
+          <span><i data-lucide="mouse-pointer-2" aria-hidden="true"></i> Towers can be built during combat.</span>
+          <button class="button button--primary button--large" id="deploy-button" type="button">
+            Deploy to sector <i data-lucide="arrow-right" aria-hidden="true"></i>
+          </button>
+        </div>
+      </section>
+    </div>
+
+    <div class="modal-backdrop" id="help-modal" role="dialog" aria-modal="true" aria-labelledby="help-modal-title">
+      <section class="modal modal--manual">
+        <button class="modal-close icon-button" id="help-close-button" type="button" aria-label="Close field manual">
+          <i data-lucide="x" aria-hidden="true"></i>
+        </button>
+        <span class="eyebrow">FIELD MANUAL / QUICK REFERENCE</span>
+        <h2 id="help-modal-title">Win through composition.</h2>
+        <div class="manual-grid">
+          <section>
+            <h3>01 · The loop</h3>
+            <p>Spend credits on open terrain, send the next wave, and stop contacts before they reach the core. Kills and cleared waves award credits.</p>
+          </section>
+          <section>
+            <h3>02 · Placement</h3>
+            <p>Select a roster card, then click an open tile. The faint grid appears while building. Dashed cells are blocked by the route or another tower.</p>
+          </section>
+          <section>
+            <h3>03 · Counter rules</h3>
+            <div id="manual-matrix" class="damage-matrix-wrap"></div>
+          </section>
+          <section>
+            <h3>04 · Status & control</h3>
+            <p>Poison refreshes one non-stacking damage-over-time effect. Select a built tower to upgrade, sell, or change First / Strong / Last targeting.</p>
+          </section>
+        </div>
+        <div class="manual-note">
+          <i data-lucide="info" aria-hidden="true"></i>
+          <span>The combat table follows Warcraft III: The Frozen Throne values, trimmed to the five armor classes used by this prototype.</span>
+        </div>
+      </section>
+    </div>
+
+    <div class="modal-backdrop" id="outcome-modal" role="dialog" aria-modal="true" aria-labelledby="outcome-title">
+      <section class="modal modal--outcome">
+        <span class="eyebrow" id="outcome-eyebrow">SECTOR REPORT</span>
+        <h2 id="outcome-title">Sector held.</h2>
+        <p id="outcome-copy">All eight waves have been neutralized.</p>
+        <div class="outcome-stats">
+          <div><small>Integrity</small><strong id="outcome-lives">0</strong></div>
+          <div><small>Towers</small><strong id="outcome-towers">0</strong></div>
+          <div><small>Credits</small><strong id="outcome-cash">$0</strong></div>
+        </div>
+        <div class="outcome-actions">
+          <button class="button button--ghost" id="outcome-levels" type="button">Level select</button>
+          <button class="button button--primary" id="outcome-retry" type="button">Run sector again</button>
+        </div>
+      </section>
+    </div>
+
+    <div class="toast-region" id="toast-region" aria-live="polite" aria-atomic="true"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
