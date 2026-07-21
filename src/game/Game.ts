@@ -160,6 +160,8 @@ export class Game {
       invested: definition.cost,
       totalDamage: 0,
       kills: 0,
+      facing: -Math.PI / 2,
+      firePulse: 0,
     };
     this.cash -= definition.cost;
     this.towers.push(tower);
@@ -282,6 +284,7 @@ export class Game {
 
   private updateTowers(dt: number): void {
     for (const tower of this.towers) {
+      tower.firePulse = Math.max(0, (tower.firePulse ?? 0) - dt * 5.5);
       tower.cooldown -= dt;
       if (tower.cooldown > 0) continue;
       const target = this.chooseTarget(tower);
@@ -293,12 +296,16 @@ export class Game {
       const definition = getTowerDefinition(tower.definitionId);
       const stats = this.getTowerStats(tower);
       const tierScale = 1 + (tower.level - 1) * 0.25;
+      const originX = tower.cell.x + 0.5;
+      const originY = tower.cell.y + 0.5;
+      tower.facing = Math.atan2(target.y - originY, target.x - originX);
+      tower.firePulse = 1;
       this.projectiles.push({
         id: this.nextId(),
         sourceTowerId: tower.id,
         targetId: target.id,
-        x: tower.cell.x + 0.5,
-        y: tower.cell.y + 0.5,
+        x: originX,
+        y: originY,
         speed: definition.projectileSpeed,
         damage: stats.damage,
         attackType: definition.attackType,
@@ -310,6 +317,11 @@ export class Game {
           ? { ...definition.slow, factor: Math.max(0.62, definition.slow.factor - (tower.level - 1) * 0.04) }
           : undefined,
         alive: true,
+        visual: tower.definitionId,
+        originX,
+        originY,
+        initialDistance: Math.max(0.001, Math.hypot(target.x - originX, target.y - originY)),
+        age: 0,
       });
       tower.cooldown += stats.interval;
       this.emit({ type: 'tower-fired', tower });
@@ -319,6 +331,7 @@ export class Game {
   private updateProjectiles(dt: number): void {
     for (const projectile of this.projectiles) {
       if (!projectile.alive) continue;
+      projectile.age = (projectile.age ?? 0) + dt;
       const target = this.enemies.find((enemy) => enemy.id === projectile.targetId && enemy.alive);
       if (!target) {
         projectile.alive = false;
@@ -352,7 +365,7 @@ export class Game {
       if (target.alive && projectile.slow) {
         this.applySlow(target, projectile.slow.factor, projectile.slow.duration);
       }
-      this.impacts.push(this.makeImpact(target.x, target.y, radius > 0 ? 'splash' : 'hit', radius || 0.3));
+      this.impacts.push(this.makeImpact(target.x, target.y, radius > 0 ? 'splash' : 'hit', radius || 0.3, projectile.visual));
     }
   }
 
@@ -526,8 +539,9 @@ export class Game {
     this.impacts = this.impacts.filter((impact) => impact.age < impact.duration);
   }
 
-  private makeImpact(x: number, y: number, kind: Impact['kind'], radius: number): Impact {
-    return { id: this.nextId(), x, y, kind, radius, age: 0, duration: kind === 'splash' ? 0.32 : 0.42 };
+  private makeImpact(x: number, y: number, kind: Impact['kind'], radius: number, visual?: TowerId): Impact {
+    const duration = visual === 'toxin' ? 0.55 : visual === 'mortar' ? 0.46 : kind === 'splash' ? 0.32 : 0.42;
+    return { id: this.nextId(), x, y, kind, radius, age: 0, duration, visual };
   }
 
   private sameCell(a: Cell, b: Cell): boolean {

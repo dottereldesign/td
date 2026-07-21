@@ -49,6 +49,10 @@ export interface Tower {
   invested: number;
   totalDamage: number;
   kills: number;
+  /** Radians, with 0 facing to the right; used only for visual orientation. */
+  facing?: number;
+  /** Short 0..1 visual recoil pulse set whenever the tower fires. */
+  firePulse?: number;
 }
 
 export interface EnemyGroup {
@@ -127,6 +131,11 @@ export interface Projectile {
   poison?: PoisonSpec;
   slow?: SlowSpec;
   alive: boolean;
+  visual?: TowerId;
+  originX?: number;
+  originY?: number;
+  initialDistance?: number;
+  age?: number;
 }
 
 export interface Impact {
@@ -137,6 +146,7 @@ export interface Impact {
   age: number;
   duration: number;
   kind: 'hit' | 'splash' | 'build' | 'sell' | 'leak';
+  visual?: TowerId;
 }
 
 export type GameEvent =
