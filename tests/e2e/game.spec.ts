@@ -10,14 +10,21 @@ test('deploys a tower and starts a wave', async ({ page }) => {
 
   const canvas = page.locator('#game-canvas');
   await expect(canvas).toBeVisible();
-  await page.getByRole('button', { name: /Sentry/i }).click();
+  await page.getByRole('button', { name: /Vacuum Sentry/i }).click();
 
   const bounds = await canvas.boundingBox();
+  const fitBounds = await page.locator('#playfield-fit').boundingBox();
   expect(bounds).not.toBeNull();
+  expect(fitBounds).not.toBeNull();
+  const cell = Math.min(fitBounds!.width / 18, fitBounds!.height / 11);
+  const boardWidth = cell * 18;
+  const boardHeight = cell * 11;
+  const originX = fitBounds!.x - bounds!.x + (fitBounds!.width - boardWidth) / 2;
+  const originY = fitBounds!.y - bounds!.y + (fitBounds!.height - boardHeight) / 2;
   await canvas.click({
     position: {
-      x: (bounds!.width * 3.5) / 18,
-      y: (bounds!.height * 4.5) / 11,
+      x: originX + cell * 3.5,
+      y: originY + cell * 4.5,
     },
   });
 
@@ -42,7 +49,7 @@ test('keeps core controls usable on a phone viewport', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: /Deploy to sector/i }).click();
   await expect(page.locator('#game-canvas')).toBeVisible();
-  await expect(page.getByRole('button', { name: /Needle Array/i })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Brush Array/i })).toBeVisible();
   await expect(page.getByRole('button', { name: /Send wave 01/i })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   if (process.env.CAPTURE_VISUAL) {

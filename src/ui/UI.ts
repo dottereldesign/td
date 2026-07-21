@@ -17,6 +17,13 @@ const ATTACK_LABELS: Record<AttackType, string> = {
   chaos: 'Chaos',
 };
 
+const TOWER_ART: Partial<Record<TowerId, string>> = {
+  sentry: new URL('../assets/generated/tower-vacuum.png', import.meta.url).href,
+  needle: new URL('../assets/generated/tower-brush.png', import.meta.url).href,
+  mortar: new URL('../assets/generated/tower-toaster.png', import.meta.url).href,
+  toxin: new URL('../assets/generated/tower-sprayer.png', import.meta.url).href,
+};
+
 export class UI {
   private selectedLevelId: string;
   private progress: ProgressRecord;
@@ -224,10 +231,15 @@ export class UI {
   private renderTowerShop(): void {
     this.towerShop.innerHTML = TOWER_ORDER.map((id) => {
       const tower = TOWER_DEFINITIONS[id];
+      const art = TOWER_ART[id];
       return `
         <button class="tower-card" type="button" data-tower="${tower.id}" aria-pressed="false">
           <span class="tower-hotkey">${tower.hotkey}</span>
-          <span class="tower-icon"><i data-lucide="${tower.icon}" aria-hidden="true"></i></span>
+          <span class="tower-icon${art ? ' tower-icon--art' : ''}">
+            ${art
+              ? `<img class="tower-art" src="${art}" alt="" aria-hidden="true" draggable="false">`
+              : `<i data-lucide="${tower.icon}" aria-hidden="true"></i>`}
+          </span>
           <span class="tower-copy">
             <strong>${tower.name}</strong>
             <small>${tower.role}</small>
