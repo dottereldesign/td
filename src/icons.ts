@@ -1,4 +1,5 @@
 import {
+  Activity,
   Aperture,
   ArrowRight,
   ArrowUp,
@@ -22,10 +23,12 @@ import {
   VolumeX,
   Waves,
   X,
+  Zap,
   createIcons,
 } from 'lucide';
 
 const icons = {
+  Activity,
   Aperture,
   ArrowRight,
   ArrowUp,
@@ -49,6 +52,7 @@ const icons = {
   VolumeX,
   Waves,
   X,
+  Zap,
 };
 
 export function refreshIcons(): void {
@@ -57,7 +61,7 @@ export function refreshIcons(): void {
     attrs: {
       width: '18',
       height: '18',
-      'stroke-width': '1.7',
+      'stroke-width': '2.4',
       'aria-hidden': 'true',
     },
     nameAttr: 'data-lucide',

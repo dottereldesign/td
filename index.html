@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="MONO//WARD — a monochrome, Warcraft III-inspired browser tower defense prototype."
+      content="MONO//WARD — a playful browser tower-defense prototype."
     />
-    <meta name="theme-color" content="#111210" />
+    <meta name="theme-color" content="#779f37" />
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <title>MONO//WARD</title>
   </head>
@@ -39,6 +39,9 @@
         </div>
 
         <div class="top-actions">
+          <button class="icon-button" id="performance-button" type="button" aria-label="Open performance monitor" aria-pressed="false" title="Performance monitor (F3)">
+            <i data-lucide="activity" aria-hidden="true"></i>
+          </button>
           <button class="icon-button" id="sound-button" type="button" aria-label="Mute sound" title="Mute sound">
             <i data-lucide="volume-2" aria-hidden="true"></i>
           </button>
@@ -51,6 +54,7 @@
       <main class="game-layout">
         <section class="board-panel" aria-label="Tower defense board">
           <div class="board-frame" id="board-frame">
+            <canvas id="terrain-canvas" aria-hidden="true"></canvas>
             <canvas id="game-canvas" aria-label="Tile map. Select a tower, then click an open tile to build."></canvas>
             <div id="playfield-fit" aria-hidden="true"></div>
             <div class="board-corner board-corner--top"><span id="phase-label">BUILD PHASE</span></div>
@@ -63,15 +67,15 @@
 
           <div class="command-bar" aria-label="Wave controls">
             <div class="wave-brief">
-              <span class="eyebrow">NEXT CONTACT</span>
+              <span class="eyebrow">NEXT WAVE</span>
               <strong id="next-wave-name">W01 · Soft targets</strong>
               <span id="next-wave-detail">9 × Unarmored · 0 armor</span>
             </div>
             <div class="command-actions">
-              <button class="button button--ghost" id="pause-button" type="button" disabled>
+              <button class="button button--gold" id="pause-button" type="button" disabled>
                 <i data-lucide="pause" aria-hidden="true"></i><span>Pause</span>
               </button>
-              <button class="button button--ghost speed-button" id="speed-button" type="button" title="Cycle speed (F)">
+              <button class="button button--cocoa speed-button" id="speed-button" type="button" title="Cycle speed (F)">
                 <i data-lucide="fast-forward" aria-hidden="true"></i><span>1×</span>
               </button>
               <button class="button button--primary" id="wave-button" type="button">
@@ -84,8 +88,8 @@
         <aside class="side-panel" aria-label="Build and tower controls">
           <div class="panel-heading">
             <div>
-              <span class="eyebrow">BUILD ROSTER</span>
-              <h1>Deploy towers</h1>
+              <span class="eyebrow">TOWER SHOP</span>
+              <h1>Choose a defender</h1>
             </div>
             <span class="key-hint">1—6</span>
           </div>

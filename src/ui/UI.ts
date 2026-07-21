@@ -2,6 +2,7 @@ import { ARMOR_CODES, ARMOR_LABELS, LEVELS, TOWER_DEFINITIONS, TOWER_ORDER, getT
 import { DAMAGE_MATRIX, matchupLabel } from '../game/damage';
 import { Game } from '../game/Game';
 import { refreshIcons } from '../icons';
+import type { PerformanceMonitor } from '../performance/PerformanceMonitor';
 import type { ArmorType, AttackType, GameEvent, LevelDefinition, TargetMode, TowerId } from '../types';
 
 interface ProgressRecord {
@@ -18,10 +19,12 @@ const ATTACK_LABELS: Record<AttackType, string> = {
 };
 
 const TOWER_ART: Partial<Record<TowerId, string>> = {
-  sentry: new URL('../assets/generated/tower-vacuum.png', import.meta.url).href,
-  needle: new URL('../assets/generated/tower-brush.png', import.meta.url).href,
-  mortar: new URL('../assets/generated/tower-toaster.png', import.meta.url).href,
-  toxin: new URL('../assets/generated/tower-sprayer.png', import.meta.url).href,
+  sentry: new URL('../assets/ui-reference/tower-vacuum.png', import.meta.url).href,
+  needle: new URL('../assets/ui-reference/tower-brush.png', import.meta.url).href,
+  mortar: new URL('../assets/ui-reference/tower-toaster.png', import.meta.url).href,
+  arcanum: new URL('../assets/ui-reference/tower-arcanum.png', import.meta.url).href,
+  toxin: new URL('../assets/ui-reference/tower-sprayer.png', import.meta.url).href,
+  null: new URL('../assets/ui-reference/tower-null.png', import.meta.url).href,
 };
 
 export class UI {
@@ -58,6 +61,7 @@ export class UI {
     private readonly onLevelReset: () => void,
     private readonly onSoundToggle: () => boolean,
     initialMuted: boolean,
+    private readonly profiler?: PerformanceMonitor,
   ) {
     this.selectedLevelId = game.level.id;
     this.progress = this.loadProgress();
@@ -71,6 +75,8 @@ export class UI {
   }
 
   render(): void {
+    const renderMark = this.profiler?.beginPhase('ui') ?? Number.NaN;
+    try {
     this.levelName.textContent = `${this.game.level.number} — ${this.game.level.name.toUpperCase()}`;
     this.livesValue.textContent = String(this.game.lives);
     this.cashValue.textContent = `$${Math.floor(this.game.cash)}`;
@@ -91,6 +97,10 @@ export class UI {
     this.updateWavePanel();
     this.updatePrompt();
     this.updateIntel();
+    } finally {
+      this.profiler?.increment('uiRenders');
+      this.profiler?.endPhase('ui', renderMark);
+    }
   }
 
   handleGameEvent(event: GameEvent): void {
@@ -104,7 +114,13 @@ export class UI {
       if (event.outcome === 'victory') this.saveVictory();
       window.setTimeout(() => this.showOutcome(event.outcome), 320);
     }
-    this.render();
+
+    // Combat produces very hot events (especially poison at 3× speed). HUD
+    // state is already refreshed on a short cadence in the main loop, so
+    // synchronously re-rendering the DOM for every hit/fire would starve rAF.
+    if (event.type !== 'enemy-hit' && event.type !== 'tower-fired' && event.type !== 'enemy-killed') {
+      this.render();
+    }
   }
 
   toast(message: string, tone: 'default' | 'warning' | 'success' = 'default'): void {
@@ -232,22 +248,25 @@ export class UI {
     this.towerShop.innerHTML = TOWER_ORDER.map((id) => {
       const tower = TOWER_DEFINITIONS[id];
       const art = TOWER_ART[id];
+      const attacksPerSecond = (1 / tower.interval).toFixed(1).replace('.0', '');
       return `
         <button class="tower-card" type="button" data-tower="${tower.id}" aria-pressed="false">
           <span class="tower-hotkey">${tower.hotkey}</span>
+          <span class="tower-copy">
+            <strong>${tower.name}</strong>
+            <small>${tower.role}</small>
+          </span>
           <span class="tower-icon${art ? ' tower-icon--art' : ''}">
             ${art
               ? `<img class="tower-art" src="${art}" alt="" aria-hidden="true" draggable="false">`
               : `<i data-lucide="${tower.icon}" aria-hidden="true"></i>`}
           </span>
-          <span class="tower-copy">
-            <strong>${tower.name}</strong>
-            <small>${tower.role}</small>
+          <span class="tower-stats">
+            <span class="tower-stat tower-stat--price"><i data-lucide="coins"></i><b>$${tower.cost}</b></span>
+            <span class="tower-stat" title="Attacks per second"><i data-lucide="zap"></i><b>${attacksPerSecond}×</b></span>
+            <span class="tower-stat" title="Range in tiles"><i data-lucide="crosshair"></i><b>${tower.range.toFixed(1)}</b></span>
           </span>
-          <span class="tower-meta">
-            <b>$${tower.cost}</b>
-            <em class="matchup" data-matchup="${tower.id}">1×</em>
-          </span>
+          <em class="matchup" data-matchup="${tower.id}">1×</em>
         </button>
       `;
     }).join('');

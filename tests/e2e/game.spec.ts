@@ -5,6 +5,9 @@ test('deploys a tower and starts a wave', async ({ page }) => {
   page.on('pageerror', (error) => pageErrors.push(error.message));
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Choose a sector to defend.' })).toBeVisible();
+  if (process.env.CAPTURE_VISUAL) {
+    await page.screenshot({ path: 'test-results/mono-ward-level-select.png', fullPage: true });
+  }
   await page.getByRole('button', { name: /Switchback/i }).click();
   await page.getByRole('button', { name: /Deploy to sector/i }).click();
 
@@ -33,6 +36,7 @@ test('deploys a tower and starts a wave', async ({ page }) => {
   await expect(page.locator('#phase-label')).toContainText('WAVE 01 ACTIVE');
   await expect(page.getByRole('button', { name: /Pause/i })).toBeEnabled();
   if (process.env.CAPTURE_VISUAL) {
+    await page.waitForTimeout(400);
     await page.screenshot({ path: 'test-results/mono-ward-desktop.png', fullPage: true });
   }
   await page.getByRole('button', { name: 'Open field manual' }).click();
@@ -53,7 +57,44 @@ test('keeps core controls usable on a phone viewport', async ({ page }) => {
   await expect(page.getByRole('button', { name: /Send wave 01/i })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   if (process.env.CAPTURE_VISUAL) {
+    await page.waitForTimeout(400);
     await page.screenshot({ path: 'test-results/mono-ward-mobile.png', fullPage: true });
   }
   expect(pageErrors).toEqual([]);
+});
+
+test('exposes a low-overhead performance monitor and F3 toggle', async ({ page }) => {
+  await page.goto('/?perf=1');
+  await page.getByRole('button', { name: /Deploy to sector/i }).click();
+
+  const panel = page.getByRole('complementary', { name: 'Game performance monitor' });
+  await expect(panel).toBeVisible();
+  await expect(panel.getByText('Performance monitor')).toBeVisible();
+  await page.waitForTimeout(2_000);
+
+  const snapshot = await page.evaluate(() => window.__MONO_WARD__.profiler.createReport().snapshot);
+  expect(snapshot.enabled).toBe(true);
+  expect(snapshot.frame.samples).toBeGreaterThan(10);
+  expect(snapshot.canvas?.megapixels).toBeLessThanOrEqual(2.21);
+  expect(Number.isFinite(snapshot.phases.render.averageMs)).toBe(true);
+  if (process.env.CAPTURE_VISUAL) {
+    await page.screenshot({ path: 'test-results/mono-ward-performance.png', fullPage: true });
+  }
+
+  await page.keyboard.press('F3');
+  await expect(panel).toBeHidden();
+  expect(await page.evaluate(() => window.__MONO_WARD__.profiler.enabled)).toBe(false);
+  await page.keyboard.press('F3');
+  await expect(panel).toBeVisible();
+});
+
+test('caps the canvas backing store on a 4K viewport', async ({ page }) => {
+  await page.setViewportSize({ width: 3840, height: 2160 });
+  await page.goto('/');
+  await page.getByRole('button', { name: /Deploy to sector/i }).click();
+  await page.waitForTimeout(300);
+
+  const diagnostics = await page.evaluate(() => window.__MONO_WARD__.renderer.getDiagnostics());
+  expect(diagnostics.megapixels).toBeLessThanOrEqual(2.21);
+  expect(diagnostics.effectiveDpr).toBeLessThan(0.55);
 });

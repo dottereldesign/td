@@ -1,8 +1,8 @@
 # MONO//WARD
 
-MONO//WARD is a complete single-player tower-defense prototype built for static hosting on GitHub Pages. It uses a full-viewport, high-DPI Canvas battlefield with translucent HTML controls layered over the map. No backend, account, or paid service is required.
+MONO//WARD is a complete single-player tower-defense prototype built for static hosting on GitHub Pages. It uses a full-viewport, high-DPI Canvas battlefield with responsive HTML controls layered over the map. No backend, account, or paid service is required.
 
-The interface and combat language stay graphite, white, and grey, with restrained cool cyan, green, and violet cues for fast status recognition. Natural cool greens, neutral concrete, and local top-down sprites give the terrain an RTS-style material finish without warm yellow or orange grading. Shape, line style, labels, and patterns still carry the important gameplay meaning.
+The interface uses a playful green-and-cream molded-game style: rounded cards, inset highlights, short 3D button shadows, chunky icons, and illustrated household-object towers. The exact tower portraits are lossless crops from the supplied `ui-examples.png`; all interactive panels and controls are responsive HTML/CSS rather than flattened screenshots. Natural cool greens, neutral concrete, and local top-down sprites keep the battlefield readable beneath the UI.
 
 ## Play locally
 
@@ -26,6 +26,7 @@ Production checks:
 npm test
 npm run build
 npm run test:e2e
+npm run test:perf
 ```
 
 The build output is written to `dist/`.
@@ -40,12 +41,21 @@ The build output is written to `dist/`.
 - Target priorities: First, Strong, and Last.
 - Tier 1–3 upgrades, 72% sell refunds, kill bounties, and wave-clear bonuses.
 - Projectile travel, siege splash, non-stacking slow, and up to three poison sources per enemy.
-- Fullscreen terrain with translucent overlay controls, responsive safe areas, and a mobile command tray.
+- Fullscreen terrain with opaque low-cost overlay controls, responsive safe areas, and a mobile command tray.
 - Placement ghost, true range preview, faint grid, and text/pattern invalid-placement feedback.
 - Pause and 1×/2×/3× simulation speed.
 - Local completion records and best remaining integrity via `localStorage`.
 - Generated Web Audio feedback with a persistent mute control.
 - Responsive desktop/mobile layouts and auto-pause when the tab is hidden.
+- Built-in F3 performance monitor with frame-time, subsystem, workload, canvas, long-task, and memory diagnostics.
+
+## Performance diagnostics
+
+Press `F3` or the activity icon in the top bar to open the performance monitor. Add `?perf=1` to the URL to open it automatically. The panel identifies UI-event, simulation, Canvas, long-task, and likely compositor pressure, and can copy a JSON report for comparison.
+
+This work is called **performance profiling**, **frame-time analysis**, or **bottleneck analysis** in game development. The browser cannot read whole-system CPU/GPU percentages or temperatures; use Chrome Task Manager (`Shift+Esc`) or Windows Task Manager beside the in-game panel for those system-level numbers.
+
+See [docs/PERFORMANCE.md](docs/PERFORMANCE.md) for the profiler guide, measured bottlenecks, optimization architecture, and stress-test commands.
 
 ## Controls
 
@@ -106,9 +116,11 @@ src/game/damage.ts      matchup matrix and armor formula
 src/render/Renderer.ts  fullscreen high-DPI Canvas terrain and combat rendering
 src/render/assets.ts    local terrain and tower asset manifest/loading
 src/assets/generated/  generated terrain textures, props, and tower sprites
+src/assets/ui-reference/ exact tower portraits extracted from the supplied UI sheet
+src/performance/        profiler core and in-game diagnostics panel
 src/ui/UI.ts            HUD, shop, modals, local records, keyboard-facing controls
 src/audio.ts            small generated Web Audio cues
-scripts/                reproducible generated-asset processing
+scripts/                reproducible reference-asset extraction and generated-asset processing
 tests/                  unit and Playwright browser tests
 ```
 

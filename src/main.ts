@@ -11,6 +11,8 @@ import './style.css';
 import { AudioEngine } from './audio';
 import { TOWER_ORDER } from './data';
 import { Game } from './game/Game';
+import { PerformanceMonitor } from './performance/PerformanceMonitor';
+import { PerformancePanel } from './performance/PerformancePanel';
 import { Renderer } from './render/Renderer';
 import type { TargetMode } from './types';
 import { UI } from './ui/UI';
@@ -20,23 +22,33 @@ if (!canvas) throw new Error('Missing game canvas.');
 
 const game = new Game();
 const audio = new AudioEngine();
+const performanceMonitor = new PerformanceMonitor({
+  open: new URLSearchParams(window.location.search).get('perf') === '1',
+  warmupMs: 750,
+});
 const renderer = new Renderer(canvas, game);
+renderer.setProfiler(performanceMonitor);
 let accumulator = 0;
 let lastFrame = performance.now();
 let lastUIRender = 0;
+let nextCanvasDraw = 0;
 
 const ui = new UI(
   game,
   () => {
     accumulator = 0;
     lastFrame = performance.now();
+    if (performanceMonitor.enabled) performanceMonitor.reset();
     renderer.draw(performance.now());
   },
   () => audio.toggle(),
   audio.muted,
+  performanceMonitor,
 );
+const performancePanel = new PerformancePanel(performanceMonitor, game, renderer);
 
 game.onEvent = (event) => {
+  performanceMonitor.incrementEvent(event.type);
   audio.handle(event);
   ui.handleGameEvent(event);
 };
@@ -120,18 +132,37 @@ function frame(now: number): void {
   lastFrame = now;
   accumulator += elapsed;
 
+  const simulationMark = performanceMonitor.beginPhase('simulation');
   let safety = 0;
-  while (accumulator >= STEP && safety < 12) {
-    for (let tick = 0; tick < game.speed; tick += 1) game.update(STEP);
+  let simulationTicks = 0;
+  while (accumulator >= STEP && safety < 5) {
+    for (let tick = 0; tick < game.speed; tick += 1) {
+      game.update(STEP);
+      simulationTicks += 1;
+    }
     accumulator -= STEP;
     safety += 1;
   }
+  if (accumulator >= STEP) accumulator %= STEP;
+  performanceMonitor.increment('simTicks', simulationTicks);
+  performanceMonitor.endPhase('simulation', simulationMark);
 
-  renderer.draw(now);
-  if (now - lastUIRender > 90) {
+  const drawInterval = game.phase === 'wave' && !game.paused ? 1_000 / 60 : 1_000 / 30;
+  performanceMonitor.setTargetFps(game.phase === 'wave' && !game.paused ? 60 : 30);
+  if (nextCanvasDraw === 0 || now - nextCanvasDraw > drawInterval * 2) nextCanvasDraw = now;
+  if (now + 0.25 >= nextCanvasDraw) {
+    performanceMonitor.beginFrame(now);
+    const renderMark = performanceMonitor.beginPhase('render');
+    renderer.draw(now);
+    performanceMonitor.endPhase('render', renderMark);
+    performanceMonitor.increment('canvasFrames');
+    nextCanvasDraw += drawInterval;
+  }
+  if (now - lastUIRender > 200) {
     ui.render();
     lastUIRender = now;
   }
+  performancePanel.update(now);
   requestAnimationFrame(frame);
 }
 
@@ -142,8 +173,10 @@ declare global {
     __MONO_WARD__: {
       game: Game;
       ui: UI;
+      renderer: Renderer;
+      profiler: PerformanceMonitor;
     };
   }
 }
 
-window.__MONO_WARD__ = { game, ui };
+window.__MONO_WARD__ = { game, ui, renderer, profiler: performanceMonitor };

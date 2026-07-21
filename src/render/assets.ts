@@ -34,13 +34,20 @@ export const TOWER_SPRITE_ASSETS: Partial<Record<TowerId, RenderAssetId>> = {
 export class AssetStore {
   private readonly images = new Map<RenderAssetId, HTMLImageElement>();
   private readonly failed = new Set<RenderAssetId>();
+  private loadRevision = 0;
 
   constructor() {
     for (const [id, url] of Object.entries(ASSET_URLS) as [RenderAssetId, string][]) {
       const image = new Image();
       image.decoding = 'async';
-      image.onload = () => this.failed.delete(id);
-      image.onerror = () => this.failed.add(id);
+      image.onload = () => {
+        this.failed.delete(id);
+        this.loadRevision += 1;
+      };
+      image.onerror = () => {
+        this.failed.add(id);
+        this.loadRevision += 1;
+      };
       image.src = url;
       this.images.set(id, image);
     }
@@ -50,5 +57,9 @@ export class AssetStore {
     const image = this.images.get(id);
     if (!image || this.failed.has(id) || !image.complete || image.naturalWidth === 0) return null;
     return image;
+  }
+
+  get revision(): number {
+    return this.loadRevision;
   }
 }

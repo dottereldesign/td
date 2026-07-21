@@ -1,5 +1,6 @@
 import { getTowerDefinition } from '../data';
 import { Game } from '../game/Game';
+import type { PerformanceMonitor } from '../performance/PerformanceMonitor';
 import type { ArmorType, Cell, Impact, Projectile, Tower, TowerId } from '../types';
 import { AssetStore, TOWER_SPRITE_ASSETS, type RenderAssetId } from './assets';
 
@@ -21,21 +22,37 @@ interface TerrainTheme {
 }
 
 export class Renderer {
-  private readonly context: CanvasRenderingContext2D;
+  private context: CanvasRenderingContext2D;
+  private readonly dynamicContext: CanvasRenderingContext2D;
+  private readonly terrainContext: CanvasRenderingContext2D;
   private readonly resizeObserver: ResizeObserver;
   private readonly assets = new AssetStore();
   private readonly reducedMotion: boolean;
   private readonly playfieldFit: HTMLElement | null;
   private dpr = 1;
+  private cachedMetrics: Metrics | null = null;
+  private metricsLevelKey = '';
+  private canvasLeft = 0;
+  private canvasTop = 0;
+  private staticCacheKey = '';
+  private staticRebuilds = 0;
+  private profiler: PerformanceMonitor | null = null;
+  private lowEffects = false;
 
   constructor(
     private readonly canvas: HTMLCanvasElement,
     private readonly game: Game,
     playfieldFit: HTMLElement | null = document.getElementById('playfield-fit'),
+    private readonly terrainCanvas = document.getElementById('terrain-canvas') as HTMLCanvasElement | null,
   ) {
-    const context = canvas.getContext('2d');
+    const context = canvas.getContext('2d', { alpha: true, desynchronized: true });
     if (!context) throw new Error('Canvas 2D is not supported in this browser.');
+    if (!terrainCanvas) throw new Error('Missing terrain canvas.');
+    const terrainContext = terrainCanvas.getContext('2d', { alpha: false });
+    if (!terrainContext) throw new Error('Canvas 2D terrain layer is not supported in this browser.');
     this.context = context;
+    this.dynamicContext = context;
+    this.terrainContext = terrainContext;
     this.playfieldFit = playfieldFit;
     this.reducedMotion = typeof window.matchMedia === 'function'
       && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -49,56 +66,109 @@ export class Renderer {
     this.resizeObserver.disconnect();
   }
 
+  setProfiler(profiler: PerformanceMonitor): void {
+    this.profiler = profiler;
+  }
+
   cellFromPointer(clientX: number, clientY: number): Cell {
-    const bounds = this.canvas.getBoundingClientRect();
     const { originX, originY, cell } = this.metrics();
     return {
-      x: Math.floor((clientX - bounds.left - originX) / cell),
-      y: Math.floor((clientY - bounds.top - originY) / cell),
+      x: Math.floor((clientX - this.canvasLeft - originX) / cell),
+      y: Math.floor((clientY - this.canvasTop - originY) / cell),
     };
   }
 
   draw(time: number): void {
     const metrics = this.metrics();
-    const ctx = this.context;
+    const staticKey = this.getStaticCacheKey(metrics);
+    if (staticKey !== this.staticCacheKey) {
+      this.context = this.terrainContext;
+      const ctx = this.terrainContext;
+      ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+      ctx.clearRect(0, 0, metrics.width, metrics.height);
+      const backdropMark = this.profiler?.beginPhase('backdrop') ?? Number.NaN;
+      this.drawBackdrop(metrics);
+      this.profiler?.endPhase('backdrop', backdropMark);
+
+      const terrainMark = this.profiler?.beginPhase('terrain') ?? Number.NaN;
+      ctx.save();
+      ctx.translate(metrics.originX, metrics.originY);
+      ctx.beginPath();
+      ctx.rect(0, 0, metrics.boardWidth, metrics.boardHeight);
+      ctx.clip();
+      this.drawTerrain(metrics);
+      this.drawPath(metrics);
+      ctx.restore();
+      this.drawBoardFrame(metrics);
+      this.profiler?.endPhase('terrain', terrainMark);
+      this.staticCacheKey = staticKey;
+      this.staticRebuilds += 1;
+      this.profiler?.increment('staticRebuilds');
+    }
+
+    this.context = this.dynamicContext;
+    const ctx = this.dynamicContext;
+    this.lowEffects = this.reducedMotion
+      || this.canvas.width * this.canvas.height > 1_800_000
+      || this.game.towers.length + this.game.enemies.length + this.game.projectiles.length + this.game.impacts.length > 90;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
-    ctx.clearRect(0, 0, metrics.width, metrics.height);
-
-    this.drawBackdrop(metrics);
-
     ctx.save();
     ctx.translate(metrics.originX, metrics.originY);
     ctx.beginPath();
     ctx.rect(0, 0, metrics.boardWidth, metrics.boardHeight);
     ctx.clip();
-    this.drawTerrain(metrics);
-    this.drawPath(metrics);
+    const overlayMark = this.profiler?.beginPhase('overlay') ?? Number.NaN;
     if (this.game.selectedBuild) this.drawPlacementGrid(metrics);
     this.drawSelectedRange(metrics);
+    this.profiler?.endPhase('overlay', overlayMark);
+    const towersMark = this.profiler?.beginPhase('towers') ?? Number.NaN;
     this.drawTowers(metrics, time);
+    this.profiler?.endPhase('towers', towersMark);
+    const enemiesMark = this.profiler?.beginPhase('enemies') ?? Number.NaN;
     this.drawEnemies(metrics, time);
+    this.profiler?.endPhase('enemies', enemiesMark);
+    const projectilesMark = this.profiler?.beginPhase('projectiles') ?? Number.NaN;
     this.drawProjectiles(metrics);
+    this.profiler?.endPhase('projectiles', projectilesMark);
+    const effectsMark = this.profiler?.beginPhase('effects') ?? Number.NaN;
     this.drawImpacts(metrics);
     this.drawPlacementGhost(metrics, time);
+    this.profiler?.endPhase('effects', effectsMark);
     ctx.restore();
 
-    this.drawBoardFrame(metrics);
     if (this.game.paused) this.drawPaused(metrics);
   }
 
   private resize(): void {
     const bounds = this.canvas.getBoundingClientRect();
-    this.dpr = Math.min(window.devicePixelRatio || 1, 2);
+    this.canvasLeft = bounds.left;
+    this.canvasTop = bounds.top;
+    const nativeDpr = Math.min(window.devicePixelRatio || 1, 1.35);
+    const pixelBudgetDpr = Math.sqrt(2_200_000 / Math.max(1, bounds.width * bounds.height));
+    this.dpr = Math.max(0.5, Math.min(nativeDpr, pixelBudgetDpr));
     const width = Math.max(1, Math.round(bounds.width * this.dpr));
     const height = Math.max(1, Math.round(bounds.height * this.dpr));
     if (this.canvas.width !== width || this.canvas.height !== height) {
       this.canvas.width = width;
       this.canvas.height = height;
     }
+    if (this.terrainCanvas!.width !== width || this.terrainCanvas!.height !== height) {
+      this.terrainCanvas!.width = width;
+      this.terrainCanvas!.height = height;
+    }
+    this.cachedMetrics = this.measureMetrics(bounds);
+    this.metricsLevelKey = this.levelMetricsKey();
+    this.staticCacheKey = '';
   }
 
   private metrics(): Metrics {
-    const canvasBounds = this.canvas.getBoundingClientRect();
+    if (!this.cachedMetrics || this.metricsLevelKey !== this.levelMetricsKey()) this.resize();
+    return this.cachedMetrics!;
+  }
+
+  private measureMetrics(canvasBounds: DOMRect): Metrics {
     let fitLeft = 0;
     let fitTop = 0;
     let fitWidth = canvasBounds.width;
@@ -133,6 +203,45 @@ export class Renderer {
       originY: fitTop + (fitHeight - boardHeight) / 2,
       boardWidth,
       boardHeight,
+    };
+  }
+
+  private levelMetricsKey(): string {
+    return `${this.game.level.id}:${this.game.level.cols}:${this.game.level.rows}`;
+  }
+
+  private getStaticCacheKey(metrics: Metrics): string {
+    return [
+      this.canvas.width,
+      this.canvas.height,
+      this.game.level.id,
+      this.assets.revision,
+      metrics.cell.toFixed(3),
+      metrics.originX.toFixed(2),
+      metrics.originY.toFixed(2),
+    ].join(':');
+  }
+
+  getDiagnostics(): {
+    cssWidth: number;
+    cssHeight: number;
+    backingWidth: number;
+    backingHeight: number;
+    effectiveDpr: number;
+    megapixels: number;
+    staticRebuilds: number;
+    quality: 'standard' | 'reduced-fx';
+  } {
+    const metrics = this.metrics();
+    return {
+      cssWidth: metrics.width,
+      cssHeight: metrics.height,
+      backingWidth: this.canvas.width,
+      backingHeight: this.canvas.height,
+      effectiveDpr: this.dpr,
+      megapixels: (this.canvas.width * this.canvas.height) / 1_000_000,
+      staticRebuilds: this.staticRebuilds,
+      quality: this.lowEffects ? 'reduced-fx' : 'standard',
     };
   }
 
@@ -433,7 +542,7 @@ export class Renderer {
     ctx.fill();
     ctx.stroke();
 
-    const ambientPulse = this.reducedMotion ? 1 : 1 + Math.sin(time * 0.003 + tower.id) * 0.016;
+    const ambientPulse = this.lowEffects ? 1 : 1 + Math.sin(time * 0.003 + tower.id) * 0.016;
     ctx.scale(ambientPulse, ambientPulse);
     const spriteAsset = TOWER_SPRITE_ASSETS[tower.definitionId];
     const sprite = spriteAsset ? this.assets.get(spriteAsset) : null;
@@ -456,7 +565,7 @@ export class Renderer {
       this.drawTowerGlyph(tower.definitionId, baseSize);
     }
 
-    if ((tower.firePulse ?? 0) > 0.05 && !this.reducedMotion) {
+    if ((tower.firePulse ?? 0) > 0.05 && !this.lowEffects) {
       const pulse = tower.firePulse ?? 0;
       ctx.globalAlpha = pulse * 0.65;
       ctx.strokeStyle = this.effectColor(tower.definitionId);
@@ -545,7 +654,7 @@ export class Renderer {
         ctx.lineWidth = Math.max(1, cell * 0.025);
         ctx.setLineDash([cell * 0.055, cell * 0.055]);
         ctx.beginPath();
-        const oscillation = this.reducedMotion ? 0 : Math.sin(time * 0.007) * cell * 0.015;
+        const oscillation = this.lowEffects ? 0 : Math.sin(time * 0.007) * cell * 0.015;
         ctx.arc(0, 0, radius + cell * 0.09 + oscillation, 0, Math.PI * 2);
         ctx.stroke();
         ctx.setLineDash([]);
@@ -658,7 +767,7 @@ export class Renderer {
     ctx.rotate(this.projectileAngle(projectile));
     ctx.strokeStyle = '#b7f6f2';
     ctx.lineWidth = Math.max(1, cell * 0.02);
-    const rings = this.reducedMotion ? 1 : 3;
+    const rings = this.lowEffects ? 1 : 3;
     for (let index = 0; index < rings; index += 1) {
       ctx.globalAlpha = 0.86 - index * 0.22;
       ctx.beginPath();
@@ -702,10 +811,10 @@ export class Renderer {
     const originY = projectile.originY ?? projectile.y;
     const travelled = Math.hypot(projectile.x - originX, projectile.y - originY);
     const progress = Math.min(1, travelled / Math.max(0.001, projectile.initialDistance ?? 1));
-    const lift = this.reducedMotion ? 0 : Math.sin(progress * Math.PI) * cell * 0.5;
+    const lift = this.lowEffects ? 0 : Math.sin(progress * Math.PI) * cell * 0.5;
     ctx.save();
     ctx.translate(x, y - lift);
-    ctx.rotate(this.reducedMotion ? 0 : (projectile.age ?? 0) * 4.2);
+    ctx.rotate(this.lowEffects ? 0 : (projectile.age ?? 0) * 4.2);
     const width = cell * 0.2;
     const height = cell * 0.17;
     ctx.fillStyle = '#d7e0df';
@@ -726,7 +835,7 @@ export class Renderer {
     ctx.save();
     ctx.translate(x, y);
     ctx.rotate(angle);
-    const dots = this.reducedMotion ? 2 : 6;
+    const dots = this.lowEffects ? 2 : 6;
     for (let index = 0; index < dots; index += 1) {
       const seed = this.hash(projectile.id + index * 13, index + 31);
       const back = index * cell * 0.055;
@@ -746,7 +855,7 @@ export class Renderer {
     ctx.fillStyle = projectile.visual === 'arcanum' ? '#d7b7ff' : '#f2f8f5';
     ctx.strokeStyle = projectile.visual === 'null' ? '#8fe7ef' : '#11191a';
     ctx.shadowColor = this.effectColor(projectile.visual);
-    ctx.shadowBlur = this.reducedMotion ? 0 : cell * 0.16;
+    ctx.shadowBlur = this.lowEffects ? 0 : cell * 0.16;
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.arc(x, y, Math.max(2.2, cell * 0.055), 0, Math.PI * 2);
@@ -773,7 +882,7 @@ export class Renderer {
     ctx.globalAlpha = 1 - progress;
     ctx.strokeStyle = '#b9f5f0';
     ctx.lineWidth = Math.max(1, cell * 0.024);
-    const rings = this.reducedMotion ? 1 : 3;
+    const rings = this.lowEffects ? 1 : 3;
     for (let index = 0; index < rings; index += 1) {
       const radius = cell * (0.3 - progress * 0.18 + index * 0.07);
       ctx.beginPath();
@@ -790,7 +899,7 @@ export class Renderer {
     ctx.globalAlpha = 1 - progress;
     ctx.strokeStyle = '#c7c0ff';
     ctx.lineWidth = Math.max(1, cell * 0.022);
-    const rays = this.reducedMotion ? 4 : 8;
+    const rays = this.lowEffects ? 4 : 8;
     for (let index = 0; index < rays; index += 1) {
       const angle = (index / rays) * Math.PI * 2;
       const inner = cell * 0.05;
@@ -813,7 +922,7 @@ export class Renderer {
     ctx.beginPath();
     ctx.arc(0, 0, Math.max(cell * 0.1, impact.radius * cell * progress), 0, Math.PI * 2);
     ctx.stroke();
-    const crumbs = this.reducedMotion ? 3 : 8;
+    const crumbs = this.lowEffects ? 3 : 8;
     for (let index = 0; index < crumbs; index += 1) {
       const angle = (index / crumbs) * Math.PI * 2 + this.hash(impact.id, index) * 0.45;
       const distance = cell * (0.08 + progress * (0.18 + this.hash(index, impact.id) * 0.24));
@@ -833,7 +942,7 @@ export class Renderer {
     ctx.save();
     ctx.translate(impact.x * cell, impact.y * cell);
     ctx.globalAlpha = (1 - progress) * 0.88;
-    const droplets = this.reducedMotion ? 4 : 12;
+    const droplets = this.lowEffects ? 4 : 12;
     for (let index = 0; index < droplets; index += 1) {
       const angle = this.hash(impact.id + index, index + 4) * Math.PI * 2;
       const distance = cell * (0.05 + progress * (0.18 + this.hash(index + 8, impact.id) * 0.25));

@@ -459,7 +459,10 @@ export class Game {
     enemy.hp -= amount;
     const tower = this.towers.find((candidate) => candidate.id === sourceTowerId);
     if (tower) tower.totalDamage += applied;
-    this.emit({ type: 'enemy-hit', amount });
+    // Poison is applied every fixed simulation tick. Emitting a public event
+    // for each tiny DOT slice created thousands of callbacks per second at 3×.
+    // Direct attacks keep the event; continuous status damage stays internal.
+    if (attackType !== null) this.emit({ type: 'enemy-hit', amount });
     if (enemy.hp <= 0) this.killEnemy(enemy, sourceTowerId);
   }
 
