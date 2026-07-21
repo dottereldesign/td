@@ -20,10 +20,12 @@ MATERIALS = {
 }
 
 TOWER_SPRITES = {
-    "tower-vacuum.png": "vacuum-sentry.png",
-    "tower-brush.png": "brush-array.png",
-    "tower-toaster.png": "toast-mortar.png",
-    "tower-sprayer.png": "fly-sprayer.png",
+    "mycelium-network.png": "mycelium-network.png",
+    "pollinator-post.png": "pollinator-post.png",
+    "canopy-guardian.png": "canopy-guardian.png",
+    "root-snare.png": "root-snare.png",
+    "seed-slinger.png": "seed-slinger.png",
+    "weathered-oak.png": "weathered-oak.png",
 }
 
 
@@ -75,7 +77,7 @@ def main() -> None:
     parser.add_argument(
         "--tower-output",
         type=Path,
-        default=root / "src" / "assets" / "towers" / "battlefield",
+        default=root / "src" / "assets" / "towers" / "worlds" / "forest",
     )
     parser.add_argument(
         "--prop-output",

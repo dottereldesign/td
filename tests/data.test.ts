@@ -1,9 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { LEVELS, TOWER_DEFINITIONS, TOWER_ORDER } from '../src/data';
+import { LEVELS, TOWER_DEFINITIONS, TOWER_ORDER, WORLDS, WORLD_TOWER_DEFINITIONS } from '../src/data';
 
 describe('game data', () => {
-  it('ships three complete eight-wave sectors', () => {
-    expect(LEVELS).toHaveLength(3);
+  it('ships six worlds with three complete eight-wave maps each', () => {
+    expect(WORLDS).toHaveLength(6);
+    expect(LEVELS).toHaveLength(18);
+    expect(new Set(LEVELS.map((level) => level.id)).size).toBe(18);
+    for (const world of WORLDS) {
+      expect(world.mapIds).toHaveLength(3);
+      expect(LEVELS.filter((level) => level.worldId === world.id)).toHaveLength(3);
+    }
     for (const level of LEVELS) {
       expect(level.waves).toHaveLength(8);
       expect(level.path.length).toBeGreaterThanOrEqual(40);
@@ -64,5 +70,14 @@ describe('game data', () => {
       expect(tower.interval).toBeGreaterThan(0);
       expect(tower.range).toBeGreaterThan(2);
     }
+  });
+
+  it('gives every world six unique themed tower names', () => {
+    for (const world of WORLDS) {
+      const towers = TOWER_ORDER.map((id) => WORLD_TOWER_DEFINITIONS[world.id][id]);
+      expect(new Set(towers.map((tower) => tower.name)).size).toBe(6);
+      expect(towers.every((tower) => tower.cost > 0)).toBe(true);
+    }
+    expect(TOWER_DEFINITIONS.sentry.name).toBe('Mycelium Network');
   });
 });

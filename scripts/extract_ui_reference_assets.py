@@ -12,7 +12,7 @@ from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "art" / "reference" / "ui" / "shop-layout.png"
-OUTPUT = ROOT / "src" / "assets" / "towers" / "portraits"
+OUTPUT = ROOT / "art" / "legacy" / "towers" / "portraits"
 
 CROPS = {
     "vacuum-sentry.png": (1084, 80, 1193, 178),

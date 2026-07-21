@@ -1,12 +1,15 @@
-import { ARMOR_CODES, ARMOR_LABELS, LEVELS, TOWER_DEFINITIONS, TOWER_ORDER, getTowerDefinition } from '../data';
+import { ARMOR_CODES, ARMOR_LABELS, LEVELS, TOWER_ORDER, WORLDS, getTowerDefinition, getWorld } from '../data';
 import { DAMAGE_MATRIX, matchupLabel } from '../game/damage';
 import { Game } from '../game/Game';
 import { refreshIcons } from '../icons';
 import type { PerformanceMonitor } from '../performance/PerformanceMonitor';
 import type { ArmorType, AttackType, GameEvent, LevelDefinition, TargetMode, TowerId } from '../types';
+import type { WorldId } from '../types';
+import { getTowerAssetUrl } from '../render/assets';
+import { starGlyphs, starsForVictory } from '../progression';
 
 interface ProgressRecord {
-  completed: string[];
+  stars: Record<string, number>;
   bestLives: Record<string, number>;
 }
 
@@ -18,17 +21,9 @@ const ATTACK_LABELS: Record<AttackType, string> = {
   chaos: 'Chaos',
 };
 
-const TOWER_ART: Partial<Record<TowerId, string>> = {
-  sentry: new URL('../assets/towers/portraits/vacuum-sentry.png', import.meta.url).href,
-  needle: new URL('../assets/towers/portraits/brush-array.png', import.meta.url).href,
-  mortar: new URL('../assets/towers/portraits/toast-mortar.png', import.meta.url).href,
-  arcanum: new URL('../assets/towers/portraits/arcanum.png', import.meta.url).href,
-  toxin: new URL('../assets/towers/portraits/fly-sprayer.png', import.meta.url).href,
-  null: new URL('../assets/towers/portraits/null-engine.png', import.meta.url).href,
-};
-
 export class UI {
   private selectedLevelId: string;
+  private selectedWorldId: WorldId;
   private progress: ProgressRecord;
   private lastShopSignature = '';
   private levelModalOpenedFromGame = false;
@@ -53,6 +48,8 @@ export class UI {
   private readonly helpModal = this.element('help-modal');
   private readonly outcomeModal = this.element('outcome-modal');
   private readonly levelGrid = this.element('level-grid');
+  private readonly worldGrid = this.element('world-grid');
+  private readonly homeScreen = this.element('home-screen');
   private readonly deployButton = this.button('deploy-button');
   private readonly toastRegion = this.element('toast-region');
 
@@ -64,13 +61,16 @@ export class UI {
     private readonly profiler?: PerformanceMonitor,
   ) {
     this.selectedLevelId = game.level.id;
+    this.selectedWorldId = game.level.worldId;
     this.progress = this.loadProgress();
     this.renderTowerShop();
+    this.renderWorldGrid();
     this.renderLevelGrid();
     this.renderDamageMatrix();
     this.bindControls();
     this.updateSoundButton(initialMuted);
     refreshIcons();
+    this.updateHomeProgress();
     this.render();
   }
 
@@ -140,10 +140,43 @@ export class UI {
 
   openLevelSelect(): void {
     if (this.game.phase === 'wave' && !this.game.paused) this.game.togglePause(true);
-    this.selectedLevelId = this.game.level.id;
+    this.selectedWorldId = this.game.level.worldId;
     this.levelModalOpenedFromGame = true;
-    this.renderLevelGrid();
+    this.showWorldSelect();
     this.levelModal.classList.add('is-open');
+  }
+
+  private showWorldSelect(): void {
+    this.worldGrid.hidden = false;
+    this.levelGrid.hidden = true;
+    this.deployButton.hidden = true;
+    this.button('world-back-button').hidden = true;
+    this.element('select-eyebrow').textContent = 'CHOOSE A LEARNING WORLD';
+    this.element('level-modal-title').textContent = 'Where will you explore?';
+    this.element('select-copy').textContent = 'Each world has three maps, six themed towers, and a different family of ideas to discover.';
+    this.renderWorldGrid();
+  }
+
+  private showMapSelect(worldId: WorldId): void {
+    this.selectedWorldId = worldId;
+    const world = getWorld(worldId);
+    const levels = LEVELS.filter((level) => level.worldId === worldId);
+    this.selectedLevelId = levels[0].id;
+    this.worldGrid.hidden = true;
+    this.levelGrid.hidden = false;
+    this.deployButton.hidden = false;
+    this.button('world-back-button').hidden = false;
+    this.element('select-eyebrow').textContent = world.theme.toUpperCase();
+    this.element('level-modal-title').textContent = world.name;
+    this.element('select-copy').textContent = `${world.description} Choose one of three maps.`;
+    this.renderLevelGrid();
+  }
+
+  private showHome(): void {
+    if (this.game.phase === 'wave' && !this.game.paused) this.game.togglePause(true);
+    this.levelModal.classList.remove('is-open');
+    this.homeScreen.classList.add('is-open');
+    this.updateHomeProgress();
   }
 
   hasOpenModal(): boolean {
@@ -163,6 +196,12 @@ export class UI {
   }
 
   private bindControls(): void {
+    this.button('home-play-button').addEventListener('click', () => {
+      this.homeScreen.classList.remove('is-open');
+      this.levelModalOpenedFromGame = false;
+      this.showWorldSelect();
+      this.levelModal.classList.add('is-open');
+    });
     this.towerShop.addEventListener('click', (event) => {
       const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-tower]');
       if (!button) return;
@@ -202,9 +241,16 @@ export class UI {
     });
 
     this.button('level-menu-button').addEventListener('click', () => this.openLevelSelect());
+    this.button('selection-home-button').addEventListener('click', () => this.showHome());
+    this.button('world-back-button').addEventListener('click', () => this.showWorldSelect());
     this.button('help-button').addEventListener('click', () => this.toggleHelp(true));
     this.button('help-close-button').addEventListener('click', () => this.toggleHelp(false));
     this.button('sound-button').addEventListener('click', () => this.updateSoundButton(this.onSoundToggle()));
+
+    this.worldGrid.addEventListener('click', (event) => {
+      const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-world]');
+      if (button?.dataset.world) this.showMapSelect(button.dataset.world as WorldId);
+    });
 
     this.levelGrid.addEventListener('click', (event) => {
       const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-level]');
@@ -240,14 +286,15 @@ export class UI {
     this.levelModal.classList.remove('is-open');
     this.levelModalOpenedFromGame = true;
     this.onLevelReset();
+    this.renderTowerShop();
     this.toast(`${this.game.level.name} sector loaded.`, 'success');
     this.render();
   }
 
   private renderTowerShop(): void {
     this.towerShop.innerHTML = TOWER_ORDER.map((id) => {
-      const tower = TOWER_DEFINITIONS[id];
-      const art = TOWER_ART[id];
+      const tower = getTowerDefinition(id, this.game.level.worldId);
+      const art = getTowerAssetUrl(this.game.level.worldId, id);
       const attacksPerSecond = (1 / tower.interval).toFixed(1).replace('.0', '');
       return `
         <button class="tower-card" type="button" data-tower="${tower.id}" aria-pressed="false">
@@ -280,7 +327,7 @@ export class UI {
 
     for (const button of this.towerShop.querySelectorAll<HTMLButtonElement>('[data-tower]')) {
       const id = button.dataset.tower as TowerId;
-      const definition = getTowerDefinition(id);
+      const definition = getTowerDefinition(id, this.game.level.worldId);
       const isActive = this.game.selectedBuild === id;
       const affordable = this.game.cash >= definition.cost;
       button.classList.toggle('is-active', isActive);
@@ -302,7 +349,7 @@ export class UI {
     this.selectionPanel.hidden = !tower;
     if (!tower) return;
 
-    const definition = getTowerDefinition(tower.definitionId);
+    const definition = getTowerDefinition(tower.definitionId, this.game.level.worldId);
     const stats = this.game.getTowerStats(tower);
     this.element('selected-name').textContent = `${definition.name} · T${tower.level}`;
     this.element('selected-damage').textContent = `${Math.round(stats.damage)} ${definition.attackType.toUpperCase()}`;
@@ -355,7 +402,7 @@ export class UI {
 
   private updatePrompt(): void {
     if (this.game.selectedBuild) {
-      const tower = getTowerDefinition(this.game.selectedBuild);
+      const tower = getTowerDefinition(this.game.selectedBuild, this.game.level.worldId);
       this.boardPrompt.classList.remove('is-hidden');
       this.boardPrompt.querySelector('strong')!.textContent = `Place ${tower.name}`;
       this.boardPrompt.querySelector('span')!.textContent = 'Click an open tile · hold Shift to repeat · Esc to cancel';
@@ -412,13 +459,32 @@ export class UI {
   }
 
   private renderLevelGrid(): void {
-    this.levelGrid.innerHTML = LEVELS.map((level) => this.levelCard(level)).join('');
+    this.levelGrid.innerHTML = LEVELS
+      .filter((level) => level.worldId === this.selectedWorldId)
+      .map((level) => this.levelCard(level)).join('');
+    refreshIcons();
+  }
+
+  private renderWorldGrid(): void {
+    this.worldGrid.innerHTML = WORLDS.map((world) => {
+      const stars = world.mapIds.reduce((sum, id) => sum + (this.progress.stars[id] ?? 0), 0);
+      return `
+        <button class="world-card" type="button" data-world="${world.id}" style="--world-color:${world.color}">
+          <span class="world-number">WORLD ${String(world.number).padStart(2, '0')}</span>
+          <span class="world-icon"><i data-lucide="${world.icon}" aria-hidden="true"></i></span>
+          <strong>${world.name}</strong>
+          <small>${world.theme}</small>
+          <p>${world.description}</p>
+          <span class="world-record"><b>★ ${stars} / 9</b><em>${world.artStatus === 'complete' ? 'ART READY' : 'PLAYABLE · ART LATER'}</em></span>
+        </button>
+      `;
+    }).join('');
     refreshIcons();
   }
 
   private levelCard(level: LevelDefinition): string {
     const selected = level.id === this.selectedLevelId;
-    const completed = this.progress.completed.includes(level.id);
+    const stars = this.progress.stars[level.id] ?? 0;
     const points = level.path.map((cell) => `${cell.x + 0.5},${cell.y + 0.5}`).join(' ');
     const best = this.progress.bestLives[level.id];
     return `
@@ -429,7 +495,7 @@ export class UI {
             <circle cx="${level.path[0].x + 0.5}" cy="${level.path[0].y + 0.5}" r="0.36" />
             <rect x="${level.path[level.path.length - 1].x + 0.15}" y="${level.path[level.path.length - 1].y + 0.15}" width="0.7" height="0.7" />
           </svg>
-          <span>${completed ? '<i data-lucide="check"></i> CLEARED' : `RISK 0${level.difficulty}`}</span>
+          <span>${stars > 0 ? `${starGlyphs(stars)} CLEARED` : `RISK 0${level.difficulty}`}</span>
         </div>
         <span class="level-number">${level.number}</span>
         <div class="level-copy">
@@ -437,7 +503,7 @@ export class UI {
           <small>${level.subtitle}</small>
           <p>${level.briefing}</p>
         </div>
-        <div class="level-record"><span>${level.waves.length} WAVES</span><span>${best === undefined ? 'NO RECORD' : `BEST ${best} HP`}</span></div>
+        <div class="level-record"><span>${starGlyphs(stars)}</span><span>${best === undefined ? 'NO RECORD' : `BEST ${best} HP`}</span></div>
       </button>
     `;
   }
@@ -449,6 +515,8 @@ export class UI {
       ? 'All eight waves have been neutralized. The sector record was saved locally.'
       : `The route broke on wave ${this.game.currentWave + 1}. Recompose your damage types and try again.`;
     this.element('outcome-lives').textContent = String(this.game.lives);
+    const earnedStars = outcome === 'victory' ? starsForVictory(this.game.lives, this.game.level.startLives) : 0;
+    this.element('outcome-stars').textContent = starGlyphs(earnedStars);
     this.element('outcome-towers').textContent = String(this.game.towers.length);
     this.element('outcome-cash').textContent = `$${Math.floor(this.game.cash)}`;
     this.outcomeModal.classList.add('is-open');
@@ -463,23 +531,34 @@ export class UI {
   }
 
   private saveVictory(): void {
-    if (!this.progress.completed.includes(this.game.level.id)) this.progress.completed.push(this.game.level.id);
+    const stars = starsForVictory(this.game.lives, this.game.level.startLives);
+    this.progress.stars[this.game.level.id] = Math.max(this.progress.stars[this.game.level.id] ?? 0, stars);
     this.progress.bestLives[this.game.level.id] = Math.max(
       this.progress.bestLives[this.game.level.id] ?? 0,
       this.game.lives,
     );
     localStorage.setItem('mono-ward-progress', JSON.stringify(this.progress));
     this.renderLevelGrid();
+    this.renderWorldGrid();
+    this.updateHomeProgress();
   }
 
   private loadProgress(): ProgressRecord {
     try {
-      const value = JSON.parse(localStorage.getItem('mono-ward-progress') ?? '') as ProgressRecord;
-      if (Array.isArray(value.completed) && typeof value.bestLives === 'object') return value;
+      const value = JSON.parse(localStorage.getItem('mono-ward-progress') ?? '') as ProgressRecord & { completed?: string[] };
+      if (typeof value.stars === 'object' && typeof value.bestLives === 'object') return value;
+      if (Array.isArray(value.completed) && typeof value.bestLives === 'object') {
+        return { stars: Object.fromEntries(value.completed.map((id) => [id, 1])), bestLives: value.bestLives };
+      }
     } catch {
       // A corrupt or absent local record should never block play.
     }
-    return { completed: [], bestLives: {} };
+    return { stars: {}, bestLives: {} };
+  }
+
+  private updateHomeProgress(): void {
+    const total = Object.values(this.progress.stars).reduce((sum, stars) => sum + stars, 0);
+    this.element('home-star-total').textContent = String(total);
   }
 
   private intelArmor(): ArmorType {

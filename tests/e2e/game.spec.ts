@@ -1,19 +1,35 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
+
+async function enterForest(page: Page): Promise<void> {
+  await page.getByRole('button', { name: /Start adventure/i }).click();
+  await page.getByRole('button', { name: /Forest World/i }).click();
+  await page.getByRole('button', { name: /Deploy to sector/i }).click();
+}
+
+test('navigates six worlds and loads a world-specific roster', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: /Start adventure/i }).click();
+  await expect(page.locator('[data-world]')).toHaveCount(6);
+  await page.getByRole('button', { name: /Workshop World/i }).click();
+  await expect(page.locator('[data-level]')).toHaveCount(3);
+  await expect(page.getByRole('button', { name: /Cogworks Entry/i })).toBeVisible();
+  await page.getByRole('button', { name: /Deploy to sector/i }).click();
+  await expect(page.getByRole('button', { name: /Gearbox Turret/i })).toBeVisible();
+});
 
 test('deploys a tower and starts a wave', async ({ page }) => {
   const pageErrors: string[] = [];
   page.on('pageerror', (error) => pageErrors.push(error.message));
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'Choose a sector to defend.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /MONO.*WARD/i })).toBeVisible();
   if (process.env.CAPTURE_VISUAL) {
     await page.screenshot({ path: 'test-results/mono-ward-level-select.png', fullPage: true });
   }
-  await page.getByRole('button', { name: /Switchback/i }).click();
-  await page.getByRole('button', { name: /Deploy to sector/i }).click();
+  await enterForest(page);
 
   const canvas = page.locator('#game-canvas');
   await expect(canvas).toBeVisible();
-  await page.getByRole('button', { name: /Vacuum Sentry/i }).click();
+  await page.getByRole('button', { name: /Mycelium Network/i }).click();
 
   const bounds = await canvas.boundingBox();
   const fitBounds = await page.locator('#playfield-fit').boundingBox();
@@ -51,9 +67,9 @@ test('keeps core controls usable on a phone viewport', async ({ page }) => {
   page.on('pageerror', (error) => pageErrors.push(error.message));
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
-  await page.getByRole('button', { name: /Deploy to sector/i }).click();
+  await enterForest(page);
   await expect(page.locator('#game-canvas')).toBeVisible();
-  await expect(page.getByRole('button', { name: /Brush Array/i })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Pollinator Post/i })).toBeVisible();
   await expect(page.getByRole('button', { name: /Send wave 01/i })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   if (process.env.CAPTURE_VISUAL) {
@@ -65,7 +81,7 @@ test('keeps core controls usable on a phone viewport', async ({ page }) => {
 
 test('exposes a low-overhead performance monitor and F3 toggle', async ({ page }) => {
   await page.goto('/?perf=1');
-  await page.getByRole('button', { name: /Deploy to sector/i }).click();
+  await enterForest(page);
 
   const panel = page.getByRole('complementary', { name: 'Game performance monitor' });
   await expect(panel).toBeVisible();
@@ -91,7 +107,7 @@ test('exposes a low-overhead performance monitor and F3 toggle', async ({ page }
 test('caps the canvas backing store on a 4K viewport', async ({ page }) => {
   await page.setViewportSize({ width: 3840, height: 2160 });
   await page.goto('/');
-  await page.getByRole('button', { name: /Deploy to sector/i }).click();
+  await enterForest(page);
   await page.waitForTimeout(300);
 
   const diagnostics = await page.evaluate(() => window.__MONO_WARD__.renderer.getDiagnostics());

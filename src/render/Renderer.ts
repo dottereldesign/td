@@ -2,7 +2,7 @@ import { getTowerDefinition } from '../data';
 import { Game } from '../game/Game';
 import type { PerformanceMonitor } from '../performance/PerformanceMonitor';
 import type { ArmorType, Cell, Impact, Projectile, Tower, TowerId } from '../types';
-import { AssetStore, PATH_TILE_ASSET_IDS, TOWER_SPRITE_ASSETS, type RenderAssetId } from './assets';
+import { AssetStore, getTowerAssetId, PATH_TILE_ASSET_IDS, type RenderAssetId } from './assets';
 import { sampleOrderedPath } from './autotile';
 import {
   TERRAIN_E,
@@ -572,21 +572,13 @@ export class Renderer {
 
     const ambientPulse = this.lowEffects ? 1 : 1 + Math.sin(time * 0.003 + tower.id) * 0.016;
     ctx.scale(ambientPulse, ambientPulse);
-    const spriteAsset = TOWER_SPRITE_ASSETS[tower.definitionId];
+    const spriteAsset = getTowerAssetId(this.game.level.worldId, tower.definitionId);
     const sprite = spriteAsset ? this.assets.get(spriteAsset) : null;
     if (sprite) {
-      const scaleByTower: Partial<Record<TowerId, number>> = {
-        sentry: 1.2,
-        needle: 1.08,
-        mortar: 1.04,
-        toxin: 1.16,
-      };
-      const size = cell * (scaleByTower[tower.definitionId] ?? 1);
-      const facing = tower.facing ?? -Math.PI / 2;
+      const size = cell * 1.08;
       const recoil = (tower.firePulse ?? 0) * cell * 0.07;
       ctx.save();
-      ctx.rotate(facing + Math.PI / 2);
-      ctx.translate(0, recoil);
+      ctx.translate(0, recoil * 0.4);
       ctx.drawImage(sprite, -size / 2, -size / 2, size, size);
       ctx.restore();
     } else {
@@ -760,9 +752,9 @@ export class Renderer {
     for (const projectile of this.game.projectiles) {
       const x = projectile.x * cell;
       const y = projectile.y * cell;
-      if (projectile.visual === 'sentry') this.drawVacuumProjectile(projectile, x, y, cell);
+      if (projectile.visual === 'sentry') this.drawReliableProjectile(projectile, x, y, cell);
       else if (projectile.visual === 'needle') this.drawBrushProjectile(projectile, x, y, cell);
-      else if (projectile.visual === 'mortar') this.drawToastProjectile(projectile, x, y, cell);
+      else if (projectile.visual === 'mortar') this.drawSplashProjectile(projectile, x, y, cell);
       else if (projectile.visual === 'toxin') this.drawSprayProjectile(projectile, x, y, cell);
       else this.drawEnergyProjectile(projectile, x, y, cell);
     }
@@ -775,7 +767,7 @@ export class Renderer {
     return Math.atan2(projectile.y - (projectile.originY ?? projectile.y), projectile.x - (projectile.originX ?? projectile.x));
   }
 
-  private drawVacuumProjectile(projectile: Projectile, x: number, y: number, cell: number): void {
+  private drawReliableProjectile(projectile: Projectile, x: number, y: number, cell: number): void {
     const ctx = this.context;
     const originX = (projectile.originX ?? projectile.x) * cell;
     const originY = (projectile.originY ?? projectile.y) * cell;
@@ -833,7 +825,7 @@ export class Renderer {
     ctx.restore();
   }
 
-  private drawToastProjectile(projectile: Projectile, x: number, y: number, cell: number): void {
+  private drawSplashProjectile(projectile: Projectile, x: number, y: number, cell: number): void {
     const ctx = this.context;
     const originX = projectile.originX ?? projectile.x;
     const originY = projectile.originY ?? projectile.y;
@@ -895,15 +887,15 @@ export class Renderer {
   private drawImpacts({ cell }: Metrics): void {
     for (const impact of this.game.impacts) {
       const progress = Math.min(1, impact.age / impact.duration);
-      if (impact.visual === 'sentry') this.drawVacuumImpact(impact, progress, cell);
+      if (impact.visual === 'sentry') this.drawReliableImpact(impact, progress, cell);
       else if (impact.visual === 'needle') this.drawBrushImpact(impact, progress, cell);
-      else if (impact.visual === 'mortar') this.drawToastImpact(impact, progress, cell);
+      else if (impact.visual === 'mortar') this.drawSplashImpact(impact, progress, cell);
       else if (impact.visual === 'toxin') this.drawSprayImpact(impact, progress, cell);
       else this.drawGenericImpact(impact, progress, cell);
     }
   }
 
-  private drawVacuumImpact(impact: Impact, progress: number, cell: number): void {
+  private drawReliableImpact(impact: Impact, progress: number, cell: number): void {
     const ctx = this.context;
     ctx.save();
     ctx.translate(impact.x * cell, impact.y * cell);
@@ -940,7 +932,7 @@ export class Renderer {
     ctx.restore();
   }
 
-  private drawToastImpact(impact: Impact, progress: number, cell: number): void {
+  private drawSplashImpact(impact: Impact, progress: number, cell: number): void {
     const ctx = this.context;
     ctx.save();
     ctx.translate(impact.x * cell, impact.y * cell);
@@ -1001,7 +993,7 @@ export class Renderer {
     const towerId = this.game.selectedBuild;
     const hover = this.game.hoverCell;
     if (!towerId || !hover) return;
-    const definition = getTowerDefinition(towerId);
+    const definition = getTowerDefinition(towerId, this.game.level.worldId);
     const placement = this.game.getPlacement(hover, towerId);
     const x = (hover.x + 0.5) * cell;
     const y = (hover.y + 0.5) * cell;

@@ -12,6 +12,29 @@
     <title>MONO//WARD</title>
   </head>
   <body>
+    <section class="home-screen is-open" id="home-screen" aria-labelledby="home-title">
+      <div class="home-orbit home-orbit--one" aria-hidden="true"></div>
+      <div class="home-orbit home-orbit--two" aria-hidden="true"></div>
+      <div class="home-card">
+        <div class="home-badge" aria-hidden="true"><i data-lucide="sprout"></i></div>
+        <span class="eyebrow">A LEARNING TOWER DEFENCE ADVENTURE</span>
+        <h1 id="home-title">MONO<span>//</span>WARD</h1>
+        <p>Build clever defences, discover how the world works, and protect six realms one lesson at a time.</p>
+        <div class="home-progress">
+          <span><i data-lucide="star" aria-hidden="true"></i><strong id="home-star-total">0</strong> / 54 stars</span>
+          <span>18 maps · 6 worlds</span>
+        </div>
+        <button class="button button--primary button--hero" id="home-play-button" type="button">
+          Start adventure <i data-lucide="arrow-right" aria-hidden="true"></i>
+        </button>
+        <div class="home-pillars" aria-label="Game features">
+          <div><i data-lucide="brain" aria-hidden="true"></i><span><strong>Learn</strong><small>Discover ideas through play</small></span></div>
+          <div><i data-lucide="shield" aria-hidden="true"></i><span><strong>Build</strong><small>Combine six tower roles</small></span></div>
+          <div><i data-lucide="star" aria-hidden="true"></i><span><strong>Master</strong><small>Earn three stars per map</small></span></div>
+        </div>
+      </div>
+    </section>
+
     <div id="app" class="app-shell">
       <header class="topbar">
         <button class="brand" id="level-menu-button" type="button" aria-label="Open level select">
@@ -147,21 +170,26 @@
       </footer>
     </div>
 
-    <div class="modal-backdrop is-open" id="level-modal" role="dialog" aria-modal="true" aria-labelledby="level-modal-title">
+    <div class="modal-backdrop" id="level-modal" role="dialog" aria-modal="true" aria-labelledby="level-modal-title">
       <section class="modal modal--wide">
         <div class="modal-topline"><span>FIELD OPERATIONS / LEVEL SELECT</span><span>MW—001</span></div>
         <div class="modal-heading">
           <div>
-            <span class="eyebrow">SINGLE PLAYER PROTOTYPE</span>
-            <h2 id="level-modal-title">Choose a sector to defend.</h2>
-            <p>Eight waves. One route. Build counters for each incoming armor class.</p>
+            <span class="eyebrow" id="select-eyebrow">CHOOSE A LEARNING WORLD</span>
+            <h2 id="level-modal-title">Where will you explore?</h2>
+            <p id="select-copy">Each world has three maps, six themed towers, and a different family of ideas to discover.</p>
           </div>
           <div class="modal-emblem" aria-hidden="true">MW</div>
         </div>
-        <div id="level-grid" class="level-grid"></div>
+        <div id="world-grid" class="world-grid"></div>
+        <div id="level-grid" class="level-grid" hidden></div>
         <div class="modal-footer">
+          <div class="selection-nav">
+            <button class="button button--ghost" id="selection-home-button" type="button">Home</button>
+            <button class="button button--ghost" id="world-back-button" type="button" hidden>All worlds</button>
+          </div>
           <span><i data-lucide="mouse-pointer-2" aria-hidden="true"></i> Towers can be built during combat.</span>
-          <button class="button button--primary button--large" id="deploy-button" type="button">
+          <button class="button button--primary button--large" id="deploy-button" type="button" hidden>
             Deploy to sector <i data-lucide="arrow-right" aria-hidden="true"></i>
           </button>
         </div>
@@ -206,6 +234,7 @@
         <h2 id="outcome-title">Sector held.</h2>
         <p id="outcome-copy">All eight waves have been neutralized.</p>
         <div class="outcome-stats">
+          <div><small>Stars</small><strong id="outcome-stars">☆☆☆</strong></div>
           <div><small>Integrity</small><strong id="outcome-lives">0</strong></div>
           <div><small>Towers</small><strong id="outcome-towers">0</strong></div>
           <div><small>Credits</small><strong id="outcome-cash">$0</strong></div>

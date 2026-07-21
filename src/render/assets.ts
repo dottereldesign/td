@@ -1,13 +1,11 @@
-import type { TowerId } from '../types';
+import type { TowerId, WorldId } from '../types';
 
 export type RenderAssetId =
   | 'terrain-ground-grass'
   | 'terrain-prop-rock-fern'
   | `terrain-path-${number}`
-  | 'tower-battlefield-vacuum-sentry'
-  | 'tower-battlefield-brush-array'
-  | 'tower-battlefield-toast-mortar'
-  | 'tower-battlefield-fly-sprayer';
+  | 'tower-forest-mycelium-network'
+  ;
 
 export const PATH_TILE_ASSET_IDS = Array.from(
   { length: 16 },
@@ -33,18 +31,21 @@ export const ASSET_URLS: Record<RenderAssetId, string> = {
   'terrain-path-13': new URL('../assets/terrain/paths/dirt/13-junction-t-missing-east.png', import.meta.url).href,
   'terrain-path-14': new URL('../assets/terrain/paths/dirt/14-junction-t-missing-north.png', import.meta.url).href,
   'terrain-path-15': new URL('../assets/terrain/paths/dirt/15-junction-four-way.png', import.meta.url).href,
-  'tower-battlefield-vacuum-sentry': new URL('../assets/towers/battlefield/vacuum-sentry.png', import.meta.url).href,
-  'tower-battlefield-brush-array': new URL('../assets/towers/battlefield/brush-array.png', import.meta.url).href,
-  'tower-battlefield-toast-mortar': new URL('../assets/towers/battlefield/toast-mortar.png', import.meta.url).href,
-  'tower-battlefield-fly-sprayer': new URL('../assets/towers/battlefield/fly-sprayer.png', import.meta.url).href,
+  'tower-forest-mycelium-network': new URL('../assets/towers/worlds/forest/mycelium-network.png', import.meta.url).href,
 };
 
-export const TOWER_SPRITE_ASSETS: Partial<Record<TowerId, RenderAssetId>> = {
-  sentry: 'tower-battlefield-vacuum-sentry',
-  needle: 'tower-battlefield-brush-array',
-  mortar: 'tower-battlefield-toast-mortar',
-  toxin: 'tower-battlefield-fly-sprayer',
+const FOREST_TOWER_ASSETS: Partial<Record<TowerId, RenderAssetId>> = {
+  sentry: 'tower-forest-mycelium-network',
 };
+
+export function getTowerAssetId(worldId: WorldId, towerId: TowerId): RenderAssetId | null {
+  return worldId === 'forest' ? FOREST_TOWER_ASSETS[towerId] ?? null : null;
+}
+
+export function getTowerAssetUrl(worldId: WorldId, towerId: TowerId): string | null {
+  const id = getTowerAssetId(worldId, towerId);
+  return id ? ASSET_URLS[id] : null;
+}
 
 /** Lightweight image cache: rendering remains procedural while an asset is loading or unavailable. */
 export class AssetStore {

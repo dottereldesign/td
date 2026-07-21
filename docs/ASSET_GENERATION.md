@@ -8,11 +8,11 @@ references, and unused materials live under `art`.
 src/assets/terrain/ground/       seamless runtime ground textures
 src/assets/terrain/paths/dirt/   individual connection-mask tiles
 src/assets/terrain/props/        transparent scenery sprites
-src/assets/towers/battlefield/   transparent in-game tower sprites
-src/assets/towers/portraits/     interface card portraits
+src/assets/towers/worlds/        shared shop/battlefield cutouts by world
 art/reference/                   supplied visual references
 art/source-materials/            processed materials not currently bundled
 art/source-sheets/               combined authoring sheets, not bundled
+art/legacy/                      retired runtime art kept only as reference
 ```
 
 ## Prompt record
@@ -27,14 +27,20 @@ no yellow, orange, golden-hour, sepia, or muddy grading.
 | `grass-trimmed` | Seamless short maintained grass with uniform material response and no directional shadows. |
 | `concrete-light` | Seamless cool-grey poured concrete with fine aggregate and restrained wear. |
 | `concrete-panel` | Seamless charcoal modular hardscape with subtle panel seams and mineral texture. |
-| `tower-vacuum` | Exact-top-down compact vacuum defense turret with graphite, silver, and cool-cyan details. |
-| `tower-brush` | Exact-top-down hairbrush turret with a dark body and dense steel bristle array. |
-| `tower-toaster` | Exact-top-down armored two-slot toaster mortar with tactical feet. |
-| `tower-sprayer` | Exact-top-down teal/green pressure-canister turret with nozzle, hose, and gauge. |
+| `mycelium-network` | Linked purple and cream mushroom cluster on a mossy defence base. |
+| `pollinator-post` | Wooden hive post, honeycomb launcher, flowers, and bee motifs. |
+| `canopy-guardian` | Layered leafy treetop lookout with a branch launcher. |
+| `root-snare` | Knotted roots around a glowing seed core. |
+| `seed-slinger` | Leaf-powered sling with a seed-pod hopper. |
+| `weathered-oak` | Ancient oak guardian with an acorn energy core. |
 | `terrain-rock-fern` | Compact top-down cluster of cool-grey rocks and dark-green fern tufts. |
 
 Sprite prompts used a flat magenta chroma-key background and excluded floors,
 cast shadows, text, logos, and watermarks.
+
+The complete Forest prompt set and current generation status live in
+`art/source-images/towers/forest/PROMPTS.md`. Retired household-tower prompts and
+art are historical references only and must not be restored to runtime folders.
 
 ## Processing workflow
 

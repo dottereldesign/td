@@ -8,7 +8,7 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   reporter: 'list',
   use: {
-    baseURL: 'http://127.0.0.1:4173',
+    baseURL: 'http://127.0.0.1:4187',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
@@ -16,8 +16,8 @@ export default defineConfig({
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
   ],
   webServer: {
-    command: 'vite --host 127.0.0.1 --port 4173',
-    url: 'http://127.0.0.1:4173',
+    command: 'node node_modules/vite/bin/vite.js --host 127.0.0.1 --port 4187',
+    url: 'http://127.0.0.1:4187',
     reuseExistingServer: !process.env.CI,
   },
 });

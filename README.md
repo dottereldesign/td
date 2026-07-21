@@ -2,6 +2,10 @@
 
 MONO//WARD is a complete single-player tower-defense prototype built for static hosting on GitHub Pages. It uses a full-viewport, high-DPI Canvas battlefield with responsive HTML controls layered over the map. No backend, account, or paid service is required.
 
+For the complete product vision, educational goals, world roster, progression,
+gameplay rules, architecture, authoring conventions, and implementation status,
+read [docs/GAME_SPEC.md](docs/GAME_SPEC.md).
+
 The interface uses a playful green-and-cream molded-game style: rounded cards, inset highlights, short 3D button shadows, chunky icons, and illustrated household-object towers. The exact tower portraits are lossless crops from the supplied `art/reference/ui/shop-layout.png`; all interactive panels and controls are responsive HTML/CSS rather than flattened screenshots. Natural cool greens, neutral concrete, and local top-down sprites keep the battlefield readable beneath the UI.
 
 ## Play locally
@@ -33,7 +37,7 @@ The build output is written to `dist/`.
 
 ## Included game systems
 
-- Three data-driven tile maps: Switchback, Crosscut, and Gauntlet.
+- Six learning worlds with three data-driven maps each.
 - Eight designed waves per map with Unarmored, Light, Medium, Heavy, and Fortified contacts.
 - Six towers: Normal, Pierce, Siege, Magic + slow, Pierce + poison, and Chaos.
 - Warcraft III: The Frozen Throne/Reforged-inspired attack-versus-armor multipliers.
@@ -75,12 +79,12 @@ See [docs/PERFORMANCE.md](docs/PERFORMANCE.md) for the profiler guide, measured 
 
 | Tower | Cost | Attack | Base damage / interval | Job |
 |---|---:|---|---:|---|
-| Vacuum Sentry | $90 | Normal | 24 / 0.82s | Reliable; counters Medium |
-| Brush Array | $120 | Pierce | 13 / 0.38s | Rapid; counters Light and Unarmored |
-| Toast Mortar | $175 | Siege | 58 / 1.70s | Splash; counters Fortified and Unarmored |
-| Arcanum | $160 | Magic | 33 / 1.05s | Counters Heavy and applies a short slow |
-| Fly Sprayer | $145 | Pierce | 8 / 0.75s | Adds 6 DPS poison for 4.5s |
-| Null Engine | $280 | Chaos | 72 / 1.25s | Expensive armor-neutral generalist |
+| Mycelium Network | $90 | Normal | 24 / 0.82s | Reliable; counters Medium |
+| Pollinator Post | $120 | Pierce | 13 / 0.38s | Rapid; counters Light and Unarmored |
+| Canopy Guardian | $175 | Siege | 58 / 1.70s | Splash; counters Fortified and Unarmored |
+| Root Snare | $160 | Magic | 33 / 1.05s | Counters Heavy and applies a short slow |
+| Seed Slinger | $145 | Pierce | 8 / 0.75s | Adds 6 DPS poison for 4.5s |
+| Weathered Oak | $280 | Chaos | 72 / 1.25s | Expensive armor-neutral generalist |
 
 ## Combat model
 
@@ -92,7 +96,7 @@ armor factor (armor >= 0) = 1 / (1 + 0.06 × armor)
 armor factor (armor < 0)  = 2 - 0.94 ^ (-armor)
 ```
 
-Poison is deliberately adapted for tower-defense readability: the same Fly Sprayer refreshes its own effect; different sprayers stack up to three times; poison bypasses numerical armor and can kill. This is documented as an adaptation, not a claim of exact Warcraft III status-effect behavior.
+Poison is deliberately adapted for tower-defense readability: the same Seed Slinger refreshes its own effect; different slingers stack up to three times; poison bypasses numerical armor and can kill. This is documented as an adaptation, not a claim of exact Warcraft III status-effect behavior.
 
 See [docs/DESIGN_AUDIT.md](docs/DESIGN_AUDIT.md) for the comparative game audit, source links, WC3 distinctions, and design decisions.
 

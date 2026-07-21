@@ -1,6 +1,7 @@
 export type AttackType = 'normal' | 'pierce' | 'siege' | 'magic' | 'chaos';
 export type ArmorType = 'unarmored' | 'light' | 'medium' | 'heavy' | 'fortified';
 export type TowerId = 'sentry' | 'needle' | 'mortar' | 'arcanum' | 'toxin' | 'null';
+export type WorldId = 'forest' | 'workshop' | 'word' | 'number' | 'space' | 'music';
 export type TargetMode = 'first' | 'strong' | 'last';
 export type GamePhase = 'build' | 'wave' | 'victory' | 'defeat';
 
@@ -87,6 +88,7 @@ export interface WaveDefinition {
 
 export interface LevelDefinition {
   id: string;
+  worldId: WorldId;
   number: string;
   name: string;
   subtitle: string;
@@ -99,6 +101,19 @@ export interface LevelDefinition {
   terrain?: TerrainDefinition;
   waves: WaveDefinition[];
   difficulty: number;
+}
+
+export interface WorldDefinition {
+  id: WorldId;
+  number: number;
+  name: string;
+  theme: string;
+  learningFocus: string;
+  description: string;
+  icon: string;
+  color: string;
+  mapIds: string[];
+  artStatus: 'complete' | 'placeholder';
 }
 
 export interface PoisonEffect {

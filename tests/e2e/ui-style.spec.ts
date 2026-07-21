@@ -1,7 +1,9 @@
 import { expect, test } from '@playwright/test';
 
-test('renders the illustrated molded tower shop without broken art or overlap', async ({ page }) => {
+test('renders the Forest tower shop without broken art or overlap', async ({ page }) => {
   await page.goto('/');
+  await page.getByRole('button', { name: /Start adventure/i }).click();
+  await page.getByRole('button', { name: /Forest World/i }).click();
   await page.getByRole('button', { name: /Deploy to sector/i }).click();
 
   const shop = page.locator('#tower-shop');
@@ -9,7 +11,8 @@ test('renders the illustrated molded tower shop without broken art or overlap', 
   const portraits = shop.locator('.tower-art');
 
   await expect(cards).toHaveCount(6);
-  await expect(portraits).toHaveCount(6);
+  await expect(portraits).toHaveCount(1);
+  await expect(shop.locator('.tower-icon:not(.tower-icon--art)')).toHaveCount(5);
 
   const layout = await page.evaluate(() => {
     const shopElement = document.querySelector<HTMLElement>('#tower-shop')!;

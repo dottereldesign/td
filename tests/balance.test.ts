@@ -15,7 +15,7 @@ function finishWave(game: Game): void {
 }
 
 describe('prototype balance smoke test', () => {
-  it('allows a mixed-counter strategy to finish Switchback', () => {
+  it('allows a mixed-counter strategy to finish Mossy Crossing', () => {
     const game = new Game('switchback');
     build(game, 'needle', { x: 4, y: 1 });
     build(game, 'sentry', { x: 6, y: 3 });

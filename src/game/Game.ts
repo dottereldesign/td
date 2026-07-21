@@ -52,7 +52,7 @@ export class Game {
   private spawnCursor = 0;
   private waveClock = 0;
 
-  constructor(levelId = 'switchback') {
+  constructor(levelId = 'forest-1') {
     this.level = getLevel(levelId);
     this.terrain = TerrainMap.fromOrderedPath(this.level.cols, this.level.rows, this.level.path, this.level.terrain);
     this.startLevel(levelId);
@@ -107,7 +107,7 @@ export class Game {
   }
 
   getTowerStats(tower: Tower): TowerStats {
-    const definition = getTowerDefinition(tower.definitionId);
+    const definition = getTowerDefinition(tower.definitionId, this.level.worldId);
     const tier = tower.level - 1;
     const damage = definition.damage * (1 + 0.34 * tier);
     const interval = definition.interval * Math.pow(0.88, tier);
@@ -117,7 +117,7 @@ export class Game {
 
   getUpgradeCost(tower: Tower): number | null {
     if (tower.level >= 3) return null;
-    const definition = getTowerDefinition(tower.definitionId);
+    const definition = getTowerDefinition(tower.definitionId, this.level.worldId);
     const multiplier = tower.level === 1 ? 0.72 : 1.08;
     return Math.ceil((definition.cost * multiplier) / 5) * 5;
   }
@@ -134,7 +134,7 @@ export class Game {
     if (this.towers.some((tower) => this.sameCell(tower.cell, cell))) {
       return { valid: false, reason: 'occupied' };
     }
-    if (this.cash < getTowerDefinition(towerId).cost) return { valid: false, reason: 'funds' };
+    if (this.cash < getTowerDefinition(towerId, this.level.worldId).cost) return { valid: false, reason: 'funds' };
     return { valid: true, reason: 'valid' };
   }
 
@@ -153,7 +153,7 @@ export class Game {
       return null;
     }
 
-    const definition = getTowerDefinition(this.selectedBuild);
+    const definition = getTowerDefinition(this.selectedBuild, this.level.worldId);
     const tower: Tower = {
       id: this.nextId(),
       definitionId: this.selectedBuild,
@@ -196,7 +196,7 @@ export class Game {
     tower.invested += cost;
     tower.level += 1;
     this.impacts.push(this.makeImpact(tower.cell.x + 0.5, tower.cell.y + 0.5, 'build', 0.72));
-    this.emit({ type: 'toast', message: `${getTowerDefinition(tower.definitionId).name} advanced to tier ${tower.level}.`, tone: 'success' });
+    this.emit({ type: 'toast', message: `${getTowerDefinition(tower.definitionId, this.level.worldId).name} advanced to tier ${tower.level}.`, tone: 'success' });
     return true;
   }
 
@@ -297,7 +297,7 @@ export class Game {
         continue;
       }
 
-      const definition = getTowerDefinition(tower.definitionId);
+      const definition = getTowerDefinition(tower.definitionId, this.level.worldId);
       const stats = this.getTowerStats(tower);
       const tierScale = 1 + (tower.level - 1) * 0.25;
       const originX = tower.cell.x + 0.5;

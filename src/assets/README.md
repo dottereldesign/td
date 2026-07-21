@@ -8,8 +8,7 @@ terrain/
   paths/dirt/   one named PNG for each path connection mask
   props/        transparent scenery sprites
 towers/
-  battlefield/  transparent sprites drawn on the game board
-  portraits/    tower-card artwork used by the HTML interface
+  worlds/       one shared shop/battlefield cutout per world-specific tower
 ```
 
 Path filenames begin with their numeric `N=1, E=2, S=4, W=8` bitmask. The

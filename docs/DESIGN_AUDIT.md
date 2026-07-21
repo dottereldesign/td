@@ -79,7 +79,7 @@ The starting $420 deliberately buys several viable openings:
 - three Needle Arrays;
 - Mortar + Arcanum with $85 reserve;
 - one specialist plus multiple generalists;
-- or a Null Engine plus one lower-cost unit after early bounties.
+- or a Weathered Oak plus one lower-cost unit after early bounties.
 
 Kill bounties provide moment-to-moment reinforcement opportunities; clear bonuses create a predictable rebuild window. A 72% sell return is high enough to let the player answer the deliberately severe 200%/35% counter table without making every purchase reversible for free.
 
@@ -87,13 +87,13 @@ The six towers form three layers:
 
 - **Core counters:** Sentry, Needle, Mortar, Arcanum.
 - **Status economy:** Toxin converts coverage time into damage; Arcanum slow increases every nearby tower's coverage time.
-- **Expensive insurance:** Null Engine is neutral against all armor but less cost-efficient than the right specialist.
+- **Expensive insurance:** Weathered Oak is neutral against all armor but less cost-efficient than the right specialist.
 
 ## 4. Level and wave learning curve
 
-- **Switchback:** long path and generous build space; teaches counters.
-- **Crosscut:** folds through the centre; teaches range efficiency and contested premium tiles.
-- **Gauntlet:** shorter correction window; teaches selling, forecast reading, and mixed composition.
+- **Mossy Crossing:** long path and generous build space; teaches counters.
+- **Sunpetal Grove:** folds through the centre; teaches range efficiency and contested premium tiles.
+- **Elderwood Heart:** shorter correction window; teaches selling, forecast reading, and mixed composition.
 
 The eight-wave sequence introduces Unarmored → Light → Medium → Heavy → mixed → Fortified → compressed mixed → all-class finale. Enemy art stays a circle as requested; armor is communicated through an internal dot, ring, X, square, or hex plus a letter in the forecast.
 
@@ -123,4 +123,4 @@ Intentionally deferred:
 - cloud persistence, leaderboards, analytics, or monetisation;
 - production balance beyond the tested opening and deterministic mechanics.
 
-The next useful playtest should answer: Can a new player predict counters from the shop alone? Does 72% selling feel permissive enough? Is the Null Engine a safety valve or an always-buy? Do mixed waves produce composition changes rather than frantic selling? Those answers should drive version 0.2 before adding more content.
+The next useful playtest should answer: Can a new player predict counters from the shop alone? Does 72% selling feel permissive enough? Is the Weathered Oak a safety valve or an always-buy? Do mixed waves produce composition changes rather than frantic selling? Those answers should drive the next balance pass.
