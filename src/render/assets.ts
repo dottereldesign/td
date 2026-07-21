@@ -1,29 +1,49 @@
 import type { TowerId } from '../types';
 
 export type RenderAssetId =
-  | 'terrain-cute-grass'
-  | 'terrain-cute-atlas'
-  | 'terrain-rock-fern'
-  | 'tower-vacuum'
-  | 'tower-brush'
-  | 'tower-toaster'
-  | 'tower-sprayer';
+  | 'terrain-ground-grass'
+  | 'terrain-prop-rock-fern'
+  | `terrain-path-${number}`
+  | 'tower-battlefield-vacuum-sentry'
+  | 'tower-battlefield-brush-array'
+  | 'tower-battlefield-toast-mortar'
+  | 'tower-battlefield-fly-sprayer';
+
+export const PATH_TILE_ASSET_IDS = Array.from(
+  { length: 16 },
+  (_, mask) => `terrain-path-${mask}` as RenderAssetId,
+);
 
 export const ASSET_URLS: Record<RenderAssetId, string> = {
-  'terrain-cute-grass': new URL('../assets/generated/terrain-cute-grass.webp', import.meta.url).href,
-  'terrain-cute-atlas': new URL('../assets/generated/terrain-cute-atlas.png', import.meta.url).href,
-  'terrain-rock-fern': new URL('../assets/generated/terrain-rock-fern.png', import.meta.url).href,
-  'tower-vacuum': new URL('../assets/generated/tower-vacuum.png', import.meta.url).href,
-  'tower-brush': new URL('../assets/generated/tower-brush.png', import.meta.url).href,
-  'tower-toaster': new URL('../assets/generated/tower-toaster.png', import.meta.url).href,
-  'tower-sprayer': new URL('../assets/generated/tower-sprayer.png', import.meta.url).href,
+  'terrain-ground-grass': new URL('../assets/terrain/ground/grass.webp', import.meta.url).href,
+  'terrain-prop-rock-fern': new URL('../assets/terrain/props/rock-fern.png', import.meta.url).href,
+  'terrain-path-0': new URL('../assets/terrain/paths/dirt/00-isolated.png', import.meta.url).href,
+  'terrain-path-1': new URL('../assets/terrain/paths/dirt/01-end-north.png', import.meta.url).href,
+  'terrain-path-2': new URL('../assets/terrain/paths/dirt/02-end-east.png', import.meta.url).href,
+  'terrain-path-3': new URL('../assets/terrain/paths/dirt/03-corner-north-east.png', import.meta.url).href,
+  'terrain-path-4': new URL('../assets/terrain/paths/dirt/04-end-south.png', import.meta.url).href,
+  'terrain-path-5': new URL('../assets/terrain/paths/dirt/05-straight-vertical.png', import.meta.url).href,
+  'terrain-path-6': new URL('../assets/terrain/paths/dirt/06-corner-east-south.png', import.meta.url).href,
+  'terrain-path-7': new URL('../assets/terrain/paths/dirt/07-junction-t-missing-west.png', import.meta.url).href,
+  'terrain-path-8': new URL('../assets/terrain/paths/dirt/08-end-west.png', import.meta.url).href,
+  'terrain-path-9': new URL('../assets/terrain/paths/dirt/09-corner-north-west.png', import.meta.url).href,
+  'terrain-path-10': new URL('../assets/terrain/paths/dirt/10-straight-horizontal.png', import.meta.url).href,
+  'terrain-path-11': new URL('../assets/terrain/paths/dirt/11-junction-t-missing-south.png', import.meta.url).href,
+  'terrain-path-12': new URL('../assets/terrain/paths/dirt/12-corner-south-west.png', import.meta.url).href,
+  'terrain-path-13': new URL('../assets/terrain/paths/dirt/13-junction-t-missing-east.png', import.meta.url).href,
+  'terrain-path-14': new URL('../assets/terrain/paths/dirt/14-junction-t-missing-north.png', import.meta.url).href,
+  'terrain-path-15': new URL('../assets/terrain/paths/dirt/15-junction-four-way.png', import.meta.url).href,
+  'tower-battlefield-vacuum-sentry': new URL('../assets/towers/battlefield/vacuum-sentry.png', import.meta.url).href,
+  'tower-battlefield-brush-array': new URL('../assets/towers/battlefield/brush-array.png', import.meta.url).href,
+  'tower-battlefield-toast-mortar': new URL('../assets/towers/battlefield/toast-mortar.png', import.meta.url).href,
+  'tower-battlefield-fly-sprayer': new URL('../assets/towers/battlefield/fly-sprayer.png', import.meta.url).href,
 };
 
 export const TOWER_SPRITE_ASSETS: Partial<Record<TowerId, RenderAssetId>> = {
-  sentry: 'tower-vacuum',
-  needle: 'tower-brush',
-  mortar: 'tower-toaster',
-  toxin: 'tower-sprayer',
+  sentry: 'tower-battlefield-vacuum-sentry',
+  needle: 'tower-battlefield-brush-array',
+  mortar: 'tower-battlefield-toast-mortar',
+  toxin: 'tower-battlefield-fly-sprayer',
 };
 
 /** Lightweight image cache: rendering remains procedural while an asset is loading or unavailable. */

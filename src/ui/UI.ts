@@ -19,12 +19,12 @@ const ATTACK_LABELS: Record<AttackType, string> = {
 };
 
 const TOWER_ART: Partial<Record<TowerId, string>> = {
-  sentry: new URL('../assets/ui-reference/tower-vacuum.png', import.meta.url).href,
-  needle: new URL('../assets/ui-reference/tower-brush.png', import.meta.url).href,
-  mortar: new URL('../assets/ui-reference/tower-toaster.png', import.meta.url).href,
-  arcanum: new URL('../assets/ui-reference/tower-arcanum.png', import.meta.url).href,
-  toxin: new URL('../assets/ui-reference/tower-sprayer.png', import.meta.url).href,
-  null: new URL('../assets/ui-reference/tower-null.png', import.meta.url).href,
+  sentry: new URL('../assets/towers/portraits/vacuum-sentry.png', import.meta.url).href,
+  needle: new URL('../assets/towers/portraits/brush-array.png', import.meta.url).href,
+  mortar: new URL('../assets/towers/portraits/toast-mortar.png', import.meta.url).href,
+  arcanum: new URL('../assets/towers/portraits/arcanum.png', import.meta.url).href,
+  toxin: new URL('../assets/towers/portraits/fly-sprayer.png', import.meta.url).href,
+  null: new URL('../assets/towers/portraits/null-engine.png', import.meta.url).href,
 };
 
 export class UI {

@@ -57,10 +57,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--grass", required=True, type=Path, help="Grass material image")
     parser.add_argument("--path", required=True, type=Path, help="Neutral path material image")
     parser.add_argument(
-        "--output",
+        "--grass-output",
         type=Path,
-        default=project_root / "src" / "assets" / "generated",
-        help="Output directory (default: src/assets/generated)",
+        default=project_root / "src" / "assets" / "terrain" / "ground" / "grass.webp",
+    )
+    parser.add_argument(
+        "--atlas-output",
+        type=Path,
+        default=project_root / "art" / "source-sheets" / "terrain" / "dirt-path-16-mask-atlas.png",
     )
     return parser.parse_args()
 
@@ -313,9 +317,10 @@ def main() -> None:
     if not args.path.is_file():
         raise FileNotFoundError(args.path)
 
-    args.output.mkdir(parents=True, exist_ok=True)
-    grass_output = args.output / "terrain-cute-grass.webp"
-    atlas_output = args.output / "terrain-cute-atlas.png"
+    grass_output = args.grass_output
+    atlas_output = args.atlas_output
+    grass_output.parent.mkdir(parents=True, exist_ok=True)
+    atlas_output.parent.mkdir(parents=True, exist_ok=True)
 
     with Image.open(args.grass) as grass_source:
         grass_repeat = mirrored_quadrant(grass_source, 1024)

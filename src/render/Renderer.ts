@@ -2,7 +2,7 @@ import { getTowerDefinition } from '../data';
 import { Game } from '../game/Game';
 import type { PerformanceMonitor } from '../performance/PerformanceMonitor';
 import type { ArmorType, Cell, Impact, Projectile, Tower, TowerId } from '../types';
-import { AssetStore, TOWER_SPRITE_ASSETS, type RenderAssetId } from './assets';
+import { AssetStore, PATH_TILE_ASSET_IDS, TOWER_SPRITE_ASSETS, type RenderAssetId } from './assets';
 import { sampleOrderedPath } from './autotile';
 import {
   TERRAIN_E,
@@ -24,10 +24,6 @@ interface Metrics {
   boardWidth: number;
   boardHeight: number;
 }
-
-const TERRAIN_ATLAS_CORE = 256;
-const TERRAIN_ATLAS_GUTTER = 4;
-const TERRAIN_ATLAS_PITCH = TERRAIN_ATLAS_CORE + TERRAIN_ATLAS_GUTTER * 2;
 
 export class Renderer {
   private context: CanvasRenderingContext2D;
@@ -268,7 +264,7 @@ export class Renderer {
 
   private drawBackdrop({ width, height, cell }: Metrics): void {
     const ctx = this.context;
-    const grass = this.makePattern('terrain-cute-grass', Math.max(420, cell * 8.5));
+    const grass = this.makePattern('terrain-ground-grass', Math.max(420, cell * 8.5));
     ctx.fillStyle = grass ?? '#a9d83f';
     ctx.fillRect(0, 0, width, height);
 
@@ -284,7 +280,7 @@ export class Renderer {
 
   private drawTerrain({ boardWidth, boardHeight, cell, originX, originY }: Metrics): void {
     const ctx = this.context;
-    const grass = this.makePattern('terrain-cute-grass', cell * 8.5, -originX, -originY);
+    const grass = this.makePattern('terrain-ground-grass', cell * 8.5, -originX, -originY);
     ctx.fillStyle = grass ?? '#addb41';
     ctx.fillRect(0, 0, boardWidth, boardHeight);
 
@@ -300,25 +296,15 @@ export class Renderer {
 
   private drawPath({ cell }: Metrics): void {
     const ctx = this.context;
-    const atlas = this.assets.get('terrain-cute-atlas');
+    const tiles = PATH_TILE_ASSET_IDS.map((id) => this.assets.get(id));
 
-    if (atlas) {
+    if (tiles.every((tile) => tile !== null)) {
       for (let y = 0; y < this.game.terrain.rows; y += 1) {
         for (let x = 0; x < this.game.terrain.cols; x += 1) {
           if (!this.game.terrain.isPath(x, y)) continue;
           const mask = this.game.terrain.getPathMask(x, y);
-          if (mask === 0) {
-            this.drawIsolatedPath(x, y, cell);
-            continue;
-          }
-          const sourceX = (mask % 4) * TERRAIN_ATLAS_PITCH + TERRAIN_ATLAS_GUTTER;
-          const sourceY = Math.floor(mask / 4) * TERRAIN_ATLAS_PITCH + TERRAIN_ATLAS_GUTTER;
           ctx.drawImage(
-            atlas,
-            sourceX,
-            sourceY,
-            TERRAIN_ATLAS_CORE,
-            TERRAIN_ATLAS_CORE,
+            tiles[mask]!,
             x * cell,
             y * cell,
             cell + 0.35,
@@ -385,27 +371,9 @@ export class Renderer {
     if (mask & TERRAIN_NW) ctx.fillRect(left, top, cell * 0.5, cell * 0.5);
   }
 
-  private drawIsolatedPath(x: number, y: number, cell: number): void {
-    const ctx = this.context;
-    const cx = (x + 0.5) * cell;
-    const cy = (y + 0.5) * cell;
-    const layers: Array<[number, string]> = [
-      [0.34, 'rgba(74, 89, 45, 0.5)'],
-      [0.31, '#6d8f35'],
-      [0.265, '#a9936d'],
-      [0.22, '#eee7da'],
-    ];
-    for (const [radius, color] of layers) {
-      ctx.fillStyle = color;
-      ctx.beginPath();
-      ctx.arc(cx, cy, cell * radius, 0, Math.PI * 2);
-      ctx.fill();
-    }
-  }
-
   private drawTerrainDecorations(cell: number): void {
     const ctx = this.context;
-    const rocks = this.assets.get('terrain-rock-fern');
+    const rocks = this.assets.get('terrain-prop-rock-fern');
     const occupied = new Set(this.game.towers.map((tower) => `${tower.cell.x},${tower.cell.y}`));
     for (let y = 0; y < this.game.terrain.rows; y += 1) {
       for (let x = 0; x < this.game.terrain.cols; x += 1) {

@@ -1,42 +1,67 @@
-# Generated art record
+# Art pipeline and runtime layout
 
-The nine runtime images in `src/assets/generated/` were created with OpenAI image generation for this prototype. They are checked into the repository and loaded locally by Vite; the game has no runtime image hotlinks.
+Image-generated source art is processed into semantic runtime folders. Only
+files imported by the application remain under `src/assets`; combined sheets,
+references, and unused materials live under `art`.
 
-The visual brief was consistent across the set: exact top-down game assets, a polished modern RTS/city-builder material style, neutral or cool lighting, and no yellow, orange, golden-hour, sepia, or muddy warm grading. The designs are original rather than copies of an existing game's assets.
+```text
+src/assets/terrain/ground/       seamless runtime ground textures
+src/assets/terrain/paths/dirt/   individual connection-mask tiles
+src/assets/terrain/props/        transparent scenery sprites
+src/assets/towers/battlefield/   transparent in-game tower sprites
+src/assets/towers/portraits/     interface card portraits
+art/reference/                   supplied visual references
+art/source-materials/            processed materials not currently bundled
+art/source-sheets/               combined authoring sheets, not bundled
+```
 
 ## Prompt record
 
-| Output | Prompt summary |
-|---|---|
-| `grass-lush.webp` | Seamless orthographic square terrain texture of dense, healthy deep-green grass with subtle forest-green variation and tiny embedded clover-like leaves; even density, soft neutral overcast light, no objects, dirt, flowers, borders, horizon, or focal point. |
-| `grass-trimmed.webp` | Seamless orthographic square texture of short maintained grass for a modern city-builder park verge; fine blades, restrained cool-green variation, uniform material response, no paths, objects, dirt patches, stripes, borders, or directional shadows. |
-| `concrete-light.webp` | Seamless orthographic poured-concrete ground texture in light-to-mid cool grey; fine aggregate, restrained wear and pores, flat neutral illumination, no cracks, lane markings, panel seams, stains, borders, shadows, or props. |
-| `concrete-panel.webp` | Seamless orthographic modular hardscape texture in cool charcoal grey; subtle geometric panel seams, fine mineral aggregate, restrained edge wear, flat neutral illumination, no painted markings, objects, dramatic cracks, or shadows. |
-| `tower-vacuum.png` | Centered exact-top-down upright vacuum-cleaner defense turret, compact graphite and brushed-silver body with restrained cool-cyan indicators, readable silhouette, polished stylized 3D game render on perfectly flat `#ff00ff` chroma-key background. |
-| `tower-brush.png` | Centered exact-top-down oval hairbrush defense turret, black/violet body with dense steel bristles arranged as a needle array, compact mechanical detailing and a readable silhouette, on flat `#ff00ff` chroma-key background. |
-| `tower-toaster.png` | Centered exact-top-down armored two-slot toaster mortar, brushed silver and graphite casing with stout tactical feet and a clear appliance silhouette, cool neutral metal lighting, on flat `#ff00ff` chroma-key background. |
-| `tower-sprayer.png` | Centered exact-top-down fly-spray defense turret, teal/green pressure canister with nozzle, hose, gauge, and compact base, polished stylized 3D game render with a readable silhouette, on flat `#ff00ff` chroma-key background. |
-| `terrain-rock-fern.png` | Small centered top-down terrain-prop cluster of three cool-grey rocks and dark-green fern tufts, neutral soft lighting and a compact natural silhouette, on flat `#ff00ff` chroma-key background. |
+The original image-generation brief called for exact top-down game assets, a
+polished modern RTS/city-builder material style, neutral or cool lighting, and
+no yellow, orange, golden-hour, sepia, or muddy grading.
 
-Each sprite prompt also required no floor, cast shadow, gradient, background texture, text, logo, or watermark. Every prompt explicitly excluded warm yellow/orange light and filters.
+| Source name | Prompt summary |
+|---|---|
+| `grass-lush` | Seamless dense deep-green grass with restrained variation and no objects or borders. |
+| `grass-trimmed` | Seamless short maintained grass with uniform material response and no directional shadows. |
+| `concrete-light` | Seamless cool-grey poured concrete with fine aggregate and restrained wear. |
+| `concrete-panel` | Seamless charcoal modular hardscape with subtle panel seams and mineral texture. |
+| `tower-vacuum` | Exact-top-down compact vacuum defense turret with graphite, silver, and cool-cyan details. |
+| `tower-brush` | Exact-top-down hairbrush turret with a dark body and dense steel bristle array. |
+| `tower-toaster` | Exact-top-down armored two-slot toaster mortar with tactical feet. |
+| `tower-sprayer` | Exact-top-down teal/green pressure-canister turret with nozzle, hose, and gauge. |
+| `terrain-rock-fern` | Compact top-down cluster of cool-grey rocks and dark-green fern tufts. |
+
+Sprite prompts used a flat magenta chroma-key background and excluded floors,
+cast shadows, text, logos, and watermarks.
 
 ## Processing workflow
 
-The four opaque terrain generations were saved under their matching `.png` source names. The five magenta-backed generations were first converted to transparent RGBA images with the ImageGen skill's `remove_chroma_key.py` helper, using border auto-keying, a soft matte, despill, and transparent/opaque thresholds of 12/220:
-
-```text
-python <imagegen-skill>/scripts/remove_chroma_key.py \
-  --input <source.png> --out <alpha.png> --auto-key border \
-  --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill
-```
-
-The repository's processing script then makes the texture boundaries repeat cleanly, exports 512×512 WebP terrain files, crops and pads sprite alpha bounds, and exports 384×384 optimized PNG sprites:
+Convert chroma-key source images to transparent RGBA first, then run:
 
 ```text
 python scripts/process_generated_assets.py \
   --source tmp/imagegen/source \
-  --alpha tmp/imagegen/alpha \
-  --output src/assets/generated
+  --alpha tmp/imagegen/alpha
 ```
 
-Expected source names are the output basenames shown above with `.png` used for all four terrain inputs. This keeps processing reproducible while leaving only browser-ready assets in the production bundle.
+The script routes tower sprites, terrain props, and non-runtime source materials
+to their appropriate folders. Tower-card portraits can be reproduced from the
+supplied UI reference with:
+
+```text
+python scripts/extract_ui_reference_assets.py
+```
+
+The dirt-path builder writes its combined authoring sheet to
+`art/source-sheets/terrain/dirt-path-16-mask-atlas.png`. After rebuilding that
+sheet, split it into named runtime files with:
+
+```text
+python scripts/split_terrain_path_tiles.py
+```
+
+Runtime path filenames begin with the numeric `N=1, E=2, S=4, W=8` bitmask and
+include a readable orientation, such as `10-straight-horizontal.png` and
+`15-junction-four-way.png`. Mask zero is emitted as a real isolated dirt island.

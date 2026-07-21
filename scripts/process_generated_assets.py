@@ -12,19 +12,18 @@ from pathlib import Path
 from PIL import Image, ImageOps
 
 
-TEXTURES = {
+MATERIALS = {
     "grass-lush.png": "grass-lush.webp",
     "grass-trimmed.png": "grass-trimmed.webp",
     "concrete-light.png": "concrete-light.webp",
     "concrete-panel.png": "concrete-panel.webp",
 }
 
-SPRITES = {
-    "tower-vacuum.png": "tower-vacuum.png",
-    "tower-brush.png": "tower-brush.png",
-    "tower-toaster.png": "tower-toaster.png",
-    "tower-sprayer.png": "tower-sprayer.png",
-    "terrain-rock-fern.png": "terrain-rock-fern.png",
+TOWER_SPRITES = {
+    "tower-vacuum.png": "vacuum-sentry.png",
+    "tower-brush.png": "brush-array.png",
+    "tower-toaster.png": "toast-mortar.png",
+    "tower-sprayer.png": "fly-sprayer.png",
 }
 
 
@@ -64,17 +63,35 @@ def prepare_sprite(source: Path, destination: Path) -> None:
 
 
 def main() -> None:
+    root = Path(__file__).resolve().parents[1]
     parser = argparse.ArgumentParser()
     parser.add_argument("--source", type=Path, required=True)
     parser.add_argument("--alpha", type=Path, required=True)
-    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument(
+        "--materials-output",
+        type=Path,
+        default=root / "art" / "source-materials" / "terrain",
+    )
+    parser.add_argument(
+        "--tower-output",
+        type=Path,
+        default=root / "src" / "assets" / "towers" / "battlefield",
+    )
+    parser.add_argument(
+        "--prop-output",
+        type=Path,
+        default=root / "src" / "assets" / "terrain" / "props",
+    )
     args = parser.parse_args()
-    args.output.mkdir(parents=True, exist_ok=True)
+    args.materials_output.mkdir(parents=True, exist_ok=True)
+    args.tower_output.mkdir(parents=True, exist_ok=True)
+    args.prop_output.mkdir(parents=True, exist_ok=True)
 
-    for source_name, output_name in TEXTURES.items():
-        prepare_texture(args.source / source_name, args.output / output_name)
-    for source_name, output_name in SPRITES.items():
-        prepare_sprite(args.alpha / source_name, args.output / output_name)
+    for source_name, output_name in MATERIALS.items():
+        prepare_texture(args.source / source_name, args.materials_output / output_name)
+    for source_name, output_name in TOWER_SPRITES.items():
+        prepare_sprite(args.alpha / source_name, args.tower_output / output_name)
+    prepare_sprite(args.alpha / "terrain-rock-fern.png", args.prop_output / "rock-fern.png")
 
 
 if __name__ == "__main__":

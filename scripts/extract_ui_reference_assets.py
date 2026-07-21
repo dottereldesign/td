@@ -11,16 +11,16 @@ from PIL import Image
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE = ROOT / "ui-examples.png"
-OUTPUT = ROOT / "src" / "assets" / "ui-reference"
+SOURCE = ROOT / "art" / "reference" / "ui" / "shop-layout.png"
+OUTPUT = ROOT / "src" / "assets" / "towers" / "portraits"
 
 CROPS = {
-    "tower-vacuum.png": (1084, 80, 1193, 178),
-    "tower-brush.png": (1299, 81, 1404, 177),
-    "tower-toaster.png": (1084, 232, 1191, 325),
-    "tower-arcanum.png": (1299, 232, 1402, 325),
-    "tower-sprayer.png": (1084, 383, 1194, 474),
-    "tower-null.png": (1299, 383, 1403, 474),
+    "vacuum-sentry.png": (1084, 80, 1193, 178),
+    "brush-array.png": (1299, 81, 1404, 177),
+    "toast-mortar.png": (1084, 232, 1191, 325),
+    "arcanum.png": (1299, 232, 1402, 325),
+    "fly-sprayer.png": (1084, 383, 1194, 474),
+    "null-engine.png": (1299, 383, 1403, 474),
 }
 
 
