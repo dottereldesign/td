@@ -251,6 +251,18 @@ export const LEVELS: LevelDefinition[] = [
       { x: 15, y: 8 },
       { x: 17, y: 8 },
     ]),
+    terrain: {
+      seed: 101,
+      // Connects the two vertical route folds, producing real T and four-way
+      // visual junctions while enemies retain their authored ordered route.
+      pathBranches: [
+        { x: 10, y: 5 }, { x: 11, y: 5 }, { x: 13, y: 5 }, { x: 14, y: 5 },
+      ],
+      dirt: [
+        { x: 7, y: 0 }, { x: 8, y: 0 }, { x: 9, y: 0 },
+        { x: 7, y: 1 }, { x: 8, y: 1 },
+      ],
+    },
     waves: waves(1),
     difficulty: 1,
   },
@@ -278,6 +290,16 @@ export const LEVELS: LevelDefinition[] = [
       { x: 14, y: 9 },
       { x: 17, y: 9 },
     ]),
+    terrain: {
+      seed: 202,
+      pathBranches: [{ x: 7, y: 5 }, { x: 6, y: 5 }],
+      // Eight dirt cells surrounding grass demonstrate an enclosed grass island.
+      dirt: [
+        { x: 9, y: 8 }, { x: 10, y: 8 }, { x: 11, y: 8 },
+        { x: 9, y: 9 }, { x: 11, y: 9 },
+        { x: 9, y: 10 }, { x: 10, y: 10 }, { x: 11, y: 10 },
+      ],
+    },
     waves: waves(1.16),
     difficulty: 2,
   },
@@ -305,6 +327,14 @@ export const LEVELS: LevelDefinition[] = [
       { x: 16, y: 2 },
       { x: 17, y: 2 },
     ]),
+    terrain: {
+      seed: 303,
+      pathBranches: [{ x: 4, y: 7 }, { x: 5, y: 7 }, { x: 7, y: 7 }, { x: 8, y: 7 }],
+      dirt: [
+        { x: 13, y: 8 }, { x: 14, y: 8 }, { x: 15, y: 8 },
+        { x: 13, y: 9 }, { x: 14, y: 9 },
+      ],
+    },
     waves: waves(1.34),
     difficulty: 3,
   },

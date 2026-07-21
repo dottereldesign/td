@@ -13,6 +13,7 @@ import type {
   TowerId,
 } from '../types';
 import { calculateDamage } from './damage';
+import { TerrainMap } from '../terrain/TerrainMap';
 
 export interface TowerStats {
   damage: number;
@@ -30,6 +31,7 @@ type Speed = 1 | 2 | 3;
 
 export class Game {
   level: LevelDefinition;
+  terrain: TerrainMap;
   cash = 0;
   lives = 0;
   phase: GamePhase = 'build';
@@ -52,11 +54,13 @@ export class Game {
 
   constructor(levelId = 'switchback') {
     this.level = getLevel(levelId);
+    this.terrain = TerrainMap.fromOrderedPath(this.level.cols, this.level.rows, this.level.path, this.level.terrain);
     this.startLevel(levelId);
   }
 
   startLevel(levelId: string): void {
     this.level = getLevel(levelId);
+    this.terrain = TerrainMap.fromOrderedPath(this.level.cols, this.level.rows, this.level.path, this.level.terrain);
     this.cash = this.level.startCash;
     this.lives = this.level.startLives;
     this.phase = 'build';
@@ -279,7 +283,7 @@ export class Game {
   }
 
   isPathCell(cell: Cell): boolean {
-    return this.level.path.some((pathCell) => this.sameCell(pathCell, cell));
+    return this.terrain.isPath(cell.x, cell.y);
   }
 
   private updateTowers(dt: number): void {

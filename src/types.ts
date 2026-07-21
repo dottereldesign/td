@@ -9,6 +9,18 @@ export interface Cell {
   y: number;
 }
 
+export type TerrainKind = 'grass' | 'path' | 'dirt';
+
+/** Optional visual terrain layered around the authoritative enemy route. */
+export interface TerrainDefinition {
+  /** Extra path cells may branch or reconnect without changing enemy movement. */
+  pathBranches?: Cell[];
+  /** Full-cell decorative dirt regions, independent from the narrow route. */
+  dirt?: Cell[];
+  /** Stable seed used for terrain variations and decorations. */
+  seed?: number;
+}
+
 export interface PoisonSpec {
   dps: number;
   duration: number;
@@ -84,6 +96,7 @@ export interface LevelDefinition {
   startCash: number;
   startLives: number;
   path: Cell[];
+  terrain?: TerrainDefinition;
   waves: WaveDefinition[];
   difficulty: number;
 }

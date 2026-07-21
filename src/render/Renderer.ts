@@ -3,7 +3,17 @@ import { Game } from '../game/Game';
 import type { PerformanceMonitor } from '../performance/PerformanceMonitor';
 import type { ArmorType, Cell, Impact, Projectile, Tower, TowerId } from '../types';
 import { AssetStore, TOWER_SPRITE_ASSETS, type RenderAssetId } from './assets';
-import { getOrderedPathMasks, sampleOrderedPath } from './autotile';
+import { sampleOrderedPath } from './autotile';
+import {
+  TERRAIN_E,
+  TERRAIN_N,
+  TERRAIN_NE,
+  TERRAIN_NW,
+  TERRAIN_S,
+  TERRAIN_SE,
+  TERRAIN_SW,
+  TERRAIN_W,
+} from '../terrain/TerrainMap';
 
 interface Metrics {
   width: number;
@@ -214,7 +224,9 @@ export class Renderer {
       this.canvas.width,
       this.canvas.height,
       this.game.level.id,
+      this.game.terrain.revision,
       this.assets.revision,
+      this.game.towers.map((tower) => `${tower.cell.x},${tower.cell.y}`).join(';'),
       metrics.cell.toFixed(3),
       metrics.originX.toFixed(2),
       metrics.originY.toFixed(2),
@@ -282,38 +294,146 @@ export class Renderer {
     gradient.addColorStop(1, 'rgba(52, 93, 30, 0.09)');
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, boardWidth, boardHeight);
+
+    this.drawDirtRegions(cell);
   }
 
   private drawPath({ cell }: Metrics): void {
     const ctx = this.context;
     const atlas = this.assets.get('terrain-cute-atlas');
-    const masks = getOrderedPathMasks(this.game.level.path);
 
     if (atlas) {
-      this.game.level.path.forEach((pathCell, index) => {
-        const mask = masks[index];
-        const sourceX = (mask % 4) * TERRAIN_ATLAS_PITCH + TERRAIN_ATLAS_GUTTER;
-        const sourceY = Math.floor(mask / 4) * TERRAIN_ATLAS_PITCH + TERRAIN_ATLAS_GUTTER;
-        ctx.drawImage(
-          atlas,
-          sourceX,
-          sourceY,
-          TERRAIN_ATLAS_CORE,
-          TERRAIN_ATLAS_CORE,
-          pathCell.x * cell,
-          pathCell.y * cell,
-          cell + 0.35,
-          cell + 0.35,
-        );
-      });
+      for (let y = 0; y < this.game.terrain.rows; y += 1) {
+        for (let x = 0; x < this.game.terrain.cols; x += 1) {
+          if (!this.game.terrain.isPath(x, y)) continue;
+          const mask = this.game.terrain.getPathMask(x, y);
+          if (mask === 0) {
+            this.drawIsolatedPath(x, y, cell);
+            continue;
+          }
+          const sourceX = (mask % 4) * TERRAIN_ATLAS_PITCH + TERRAIN_ATLAS_GUTTER;
+          const sourceY = Math.floor(mask / 4) * TERRAIN_ATLAS_PITCH + TERRAIN_ATLAS_GUTTER;
+          ctx.drawImage(
+            atlas,
+            sourceX,
+            sourceY,
+            TERRAIN_ATLAS_CORE,
+            TERRAIN_ATLAS_CORE,
+            x * cell,
+            y * cell,
+            cell + 0.35,
+            cell + 0.35,
+          );
+        }
+      }
     } else {
       this.drawFallbackPath(cell);
     }
+
+    this.drawTerrainDecorations(cell);
 
     const start = this.game.level.path[0];
     const end = this.game.level.path[this.game.level.path.length - 1];
     this.drawEndpoint(start, 'IN', cell, false);
     this.drawEndpoint(end, 'CORE', cell, true);
+  }
+
+  private drawDirtRegions(cell: number): void {
+    const ctx = this.context;
+    for (let y = 0; y < this.game.terrain.rows; y += 1) {
+      for (let x = 0; x < this.game.terrain.cols; x += 1) {
+        if (this.game.terrain.get(x, y) !== 'dirt') continue;
+        const mask = this.game.terrain.getBlobMask8(x, y, 'dirt');
+        this.fillBlobTile(x, y, cell, mask, '#8e744e', 0.055);
+        this.fillBlobTile(x, y, cell, mask, '#b79a68', 0);
+
+        const variation = this.hash(this.game.terrain.seed + x * 73, y * 97 + 19);
+        ctx.fillStyle = variation > 0.5 ? 'rgba(255, 235, 181, 0.13)' : 'rgba(81, 58, 35, 0.1)';
+        ctx.beginPath();
+        ctx.ellipse(
+          (x + 0.28 + variation * 0.42) * cell,
+          (y + 0.3 + this.hash(x * 31, y * 59) * 0.38) * cell,
+          cell * 0.055,
+          cell * 0.025,
+          variation * Math.PI,
+          0,
+          Math.PI * 2,
+        );
+        ctx.fill();
+      }
+    }
+  }
+
+  private fillBlobTile(x: number, y: number, cell: number, mask: number, color: string, expansion: number): void {
+    const ctx = this.context;
+    const left = x * cell;
+    const top = y * cell;
+    const half = cell * (0.36 + expansion);
+    const centreX = left + cell * 0.5;
+    const centreY = top + cell * 0.5;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.roundRect(centreX - half, centreY - half, half * 2, half * 2, cell * 0.19);
+    ctx.fill();
+    if (mask & TERRAIN_N) ctx.fillRect(centreX - half, top, half * 2, cell * 0.5);
+    if (mask & TERRAIN_E) ctx.fillRect(centreX, centreY - half, cell * 0.5, half * 2);
+    if (mask & TERRAIN_S) ctx.fillRect(centreX - half, centreY, half * 2, cell * 0.5);
+    if (mask & TERRAIN_W) ctx.fillRect(left, centreY - half, cell * 0.5, half * 2);
+    if (mask & TERRAIN_NE) ctx.fillRect(centreX, top, cell * 0.5, cell * 0.5);
+    if (mask & TERRAIN_SE) ctx.fillRect(centreX, centreY, cell * 0.5, cell * 0.5);
+    if (mask & TERRAIN_SW) ctx.fillRect(left, centreY, cell * 0.5, cell * 0.5);
+    if (mask & TERRAIN_NW) ctx.fillRect(left, top, cell * 0.5, cell * 0.5);
+  }
+
+  private drawIsolatedPath(x: number, y: number, cell: number): void {
+    const ctx = this.context;
+    const cx = (x + 0.5) * cell;
+    const cy = (y + 0.5) * cell;
+    const layers: Array<[number, string]> = [
+      [0.34, 'rgba(74, 89, 45, 0.5)'],
+      [0.31, '#6d8f35'],
+      [0.265, '#a9936d'],
+      [0.22, '#eee7da'],
+    ];
+    for (const [radius, color] of layers) {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(cx, cy, cell * radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  private drawTerrainDecorations(cell: number): void {
+    const ctx = this.context;
+    const rocks = this.assets.get('terrain-rock-fern');
+    const occupied = new Set(this.game.towers.map((tower) => `${tower.cell.x},${tower.cell.y}`));
+    for (let y = 0; y < this.game.terrain.rows; y += 1) {
+      for (let x = 0; x < this.game.terrain.cols; x += 1) {
+        if (this.game.terrain.get(x, y) !== 'grass' || occupied.has(`${x},${y}`)) continue;
+        let nearPath = false;
+        for (let oy = -1; oy <= 1 && !nearPath; oy += 1) {
+          for (let ox = -1; ox <= 1; ox += 1) {
+            if (this.game.terrain.isPath(x + ox, y + oy)) nearPath = true;
+          }
+        }
+        const chance = this.hash(this.game.terrain.seed + x * 101, y * 181 + 47);
+        if (rocks && !nearPath && chance > 0.965) {
+          const size = cell * (0.46 + this.hash(x * 37, y * 41) * 0.16);
+          ctx.drawImage(rocks, (x + 0.5) * cell - size / 2, (y + 0.53) * cell - size / 2, size, size);
+        } else if (chance > 0.82) {
+          const px = (x + 0.25 + this.hash(x * 13, y * 17) * 0.5) * cell;
+          const py = (y + 0.3 + this.hash(x * 29, y * 23) * 0.42) * cell;
+          ctx.strokeStyle = 'rgba(61, 113, 39, 0.5)';
+          ctx.lineWidth = Math.max(1, cell * 0.018);
+          ctx.beginPath();
+          ctx.moveTo(px, py + cell * 0.08);
+          ctx.quadraticCurveTo(px - cell * 0.08, py, px - cell * 0.1, py - cell * 0.07);
+          ctx.moveTo(px, py + cell * 0.08);
+          ctx.quadraticCurveTo(px + cell * 0.07, py, px + cell * 0.11, py - cell * 0.05);
+          ctx.stroke();
+        }
+      }
+    }
   }
 
   private drawFallbackPath(cell: number): void {

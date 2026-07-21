@@ -115,6 +115,7 @@ src/game/Game.ts        deterministic simulation, economy, targeting, status eff
 src/game/damage.ts      matchup matrix and armor formula
 src/render/Renderer.ts  fullscreen high-DPI Canvas terrain and combat rendering
 src/render/assets.ts    local terrain and tower asset manifest/loading
+src/terrain/TerrainMap.ts editable terrain grid, path networks, and 8-neighbour masks
 src/assets/generated/  generated terrain textures, props, and tower sprites
 src/assets/ui-reference/ exact tower portraits extracted from the supplied UI sheet
 src/performance/        profiler core and in-game diagnostics panel
@@ -123,5 +124,20 @@ src/audio.ts            small generated Web Audio cues
 scripts/                reproducible reference-asset extraction and generated-asset processing
 tests/                  unit and Playwright browser tests
 ```
+
+## Terrain authoring
+
+Enemy movement still follows the ordered `LevelDefinition.path`. Optional
+`level.terrain.pathBranches` cells extend only the visible/build-blocking path
+network, so maps can contain dead ends, T-junctions, loops, and four-way
+junctions without accidentally changing a wave's route. Optional
+`level.terrain.dirt` cells form full-tile clearings using canonical
+eight-neighbour blob masks.
+
+`TerrainMap.fromArray()` accepts rectangular rows containing `.` (grass), `#`
+(path), and `d` (dirt). `TerrainMap.generate()` accepts a coordinate callback
+for procedural maps. At runtime, `game.terrain.set(x, y, kind)` updates local
+neighbour masks and increments the terrain revision; the renderer notices that
+revision and rebuilds its cached static terrain layer automatically.
 
 All runtime art is bundled locally; the game does not hotlink image assets. The generated-art workflow and prompt record are in [docs/ASSET_GENERATION.md](docs/ASSET_GENERATION.md). Third-party icons and fonts are permissively licensed; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

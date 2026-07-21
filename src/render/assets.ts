@@ -3,6 +3,7 @@ import type { TowerId } from '../types';
 export type RenderAssetId =
   | 'terrain-cute-grass'
   | 'terrain-cute-atlas'
+  | 'terrain-rock-fern'
   | 'tower-vacuum'
   | 'tower-brush'
   | 'tower-toaster'
@@ -11,6 +12,7 @@ export type RenderAssetId =
 export const ASSET_URLS: Record<RenderAssetId, string> = {
   'terrain-cute-grass': new URL('../assets/generated/terrain-cute-grass.webp', import.meta.url).href,
   'terrain-cute-atlas': new URL('../assets/generated/terrain-cute-atlas.png', import.meta.url).href,
+  'terrain-rock-fern': new URL('../assets/generated/terrain-rock-fern.png', import.meta.url).href,
   'tower-vacuum': new URL('../assets/generated/tower-vacuum.png', import.meta.url).href,
   'tower-brush': new URL('../assets/generated/tower-brush.png', import.meta.url).href,
   'tower-toaster': new URL('../assets/generated/tower-toaster.png', import.meta.url).href,
