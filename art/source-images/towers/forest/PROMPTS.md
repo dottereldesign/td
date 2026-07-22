@@ -1,8 +1,8 @@
 # Forest tower generation prompts
 
-All images use the built-in image-generation workflow, one generation per
-tower. Save the magenta source beside this file, remove the chroma key, resize
-the result to a maximum of 512 × 512, and place the runtime PNG in
+All six Forest tower images have been generated with the built-in
+image-generation workflow, one generation per tower. Their magenta sources are
+stored beside this file; processed runtime PNGs are in
 `src/assets/towers/worlds/forest/`.
 
 Shared style and constraints:

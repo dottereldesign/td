@@ -613,6 +613,13 @@ button:disabled {
   background: #fef8d9;
 }
 
+.tower-icon--art {
+  box-sizing: border-box;
+  display: block;
+  padding: 4px 6px 10px;
+  overflow: visible;
+}
+
 .tower-icon > svg {
   width: 44px;
   height: 44px;
@@ -625,6 +632,7 @@ button:disabled {
   max-width: none;
   display: block;
   object-fit: contain;
+  object-position: center bottom;
   pointer-events: none;
   user-select: none;
 }

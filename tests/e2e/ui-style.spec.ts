@@ -11,8 +11,8 @@ test('renders the Forest tower shop without broken art or overlap', async ({ pag
   const portraits = shop.locator('.tower-art');
 
   await expect(cards).toHaveCount(6);
-  await expect(portraits).toHaveCount(1);
-  await expect(shop.locator('.tower-icon:not(.tower-icon--art)')).toHaveCount(5);
+  await expect(portraits).toHaveCount(6);
+  await expect(shop.locator('.tower-icon:not(.tower-icon--art)')).toHaveCount(0);
 
   const layout = await page.evaluate(() => {
     const shopElement = document.querySelector<HTMLElement>('#tower-shop')!;
@@ -27,6 +27,13 @@ test('renders the Forest tower shop without broken art or overlap', async ({ pag
       minCardWidth: Math.min(...cardRects.map((rect) => rect.width)),
       minCardHeight: Math.min(...cardRects.map((rect) => rect.height)),
       allPortraitsLoaded: imageElements.every((image) => image.complete && image.naturalWidth >= 100),
+      portraitBottomInsets: imageElements.map((image) => {
+        const icon = image.closest<HTMLElement>('.tower-icon');
+        if (!icon) return 0;
+        const iconRect = icon.getBoundingClientRect();
+        const imageRect = image.getBoundingClientRect();
+        return iconRect.bottom - imageRect.bottom;
+      }),
       sidePanelFitsViewport: document.querySelector<HTMLElement>('.side-panel')!.getBoundingClientRect().right <= window.innerWidth,
       usesLiveBackdropBlur: getComputedStyle(topbar).backdropFilter !== 'none',
     };
@@ -37,6 +44,7 @@ test('renders the Forest tower shop without broken art or overlap', async ({ pag
   expect(layout.minCardWidth).toBeGreaterThan(180);
   expect(layout.minCardHeight).toBeGreaterThanOrEqual(140);
   expect(layout.allPortraitsLoaded).toBe(true);
+  expect(Math.min(...layout.portraitBottomInsets)).toBeGreaterThanOrEqual(8);
   expect(layout.sidePanelFitsViewport).toBe(true);
   expect(layout.usesLiveBackdropBlur).toBe(false);
 });

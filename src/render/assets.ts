@@ -5,6 +5,11 @@ export type RenderAssetId =
   | 'terrain-prop-rock-fern'
   | `terrain-path-${number}`
   | 'tower-forest-mycelium-network'
+  | 'tower-forest-pollinator-post'
+  | 'tower-forest-canopy-guardian'
+  | 'tower-forest-root-snare'
+  | 'tower-forest-seed-slinger'
+  | 'tower-forest-weathered-oak'
   ;
 
 export const PATH_TILE_ASSET_IDS = Array.from(
@@ -32,10 +37,20 @@ export const ASSET_URLS: Record<RenderAssetId, string> = {
   'terrain-path-14': new URL('../assets/terrain/paths/dirt/14-junction-t-missing-north.png', import.meta.url).href,
   'terrain-path-15': new URL('../assets/terrain/paths/dirt/15-junction-four-way.png', import.meta.url).href,
   'tower-forest-mycelium-network': new URL('../assets/towers/worlds/forest/mycelium-network.png', import.meta.url).href,
+  'tower-forest-pollinator-post': new URL('../assets/towers/worlds/forest/pollinator-post.png', import.meta.url).href,
+  'tower-forest-canopy-guardian': new URL('../assets/towers/worlds/forest/canopy-guardian.png', import.meta.url).href,
+  'tower-forest-root-snare': new URL('../assets/towers/worlds/forest/root-snare.png', import.meta.url).href,
+  'tower-forest-seed-slinger': new URL('../assets/towers/worlds/forest/seed-slinger.png', import.meta.url).href,
+  'tower-forest-weathered-oak': new URL('../assets/towers/worlds/forest/weathered-oak.png', import.meta.url).href,
 };
 
 const FOREST_TOWER_ASSETS: Partial<Record<TowerId, RenderAssetId>> = {
   sentry: 'tower-forest-mycelium-network',
+  needle: 'tower-forest-pollinator-post',
+  mortar: 'tower-forest-canopy-guardian',
+  arcanum: 'tower-forest-root-snare',
+  toxin: 'tower-forest-seed-slinger',
+  null: 'tower-forest-weathered-oak',
 };
 
 export function getTowerAssetId(worldId: WorldId, towerId: TowerId): RenderAssetId | null {
