@@ -8,6 +8,13 @@ test('renders the illustrated home dashboard and opens a world', async ({ page }
   await expect(home).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Snack Squad' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Start adventure' })).toBeVisible();
+  await expect(page.locator('#home-player-level')).toHaveText('1');
+  await expect(page.locator('#home-energy-value')).toHaveText('0/100');
+  await expect(page.locator('#home-coins-value')).toHaveText('0');
+  await expect(page.locator('#home-gems-value')).toHaveText('0');
+  await expect(page.locator('#home-power-value')).toHaveText('0');
+  await expect(page.locator('#home-streak-value')).toHaveText('Start today');
+  await expect(page.locator('#home-best-wave-value')).toHaveText('No waves');
   await expect(home.locator('.home-quick-button')).toHaveCount(4);
   await expect(home.locator('[data-home-world]')).toHaveCount(6);
 
@@ -76,6 +83,84 @@ test('renders the illustrated home dashboard and opens a world', async ({ page }
   }
 });
 
+test('persists guest settings and daily rewards in local browser storage', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Settings' }).click();
+
+  const panel = page.locator('#home-panel-modal');
+  await expect(panel).toBeVisible();
+  await expect(panel.getByRole('heading', { name: 'Settings' })).toBeVisible();
+  await expect(panel.locator('[data-setting]')).toHaveCount(3);
+  if (process.env.CAPTURE_HOME) await page.screenshot({ path: 'tmp/settings-panel-qa.png', fullPage: true });
+  await panel.getByText('Gameplay tips').click();
+  await expect(panel.locator('[data-setting="gameplayTips"]')).not.toBeChecked();
+  await panel.getByRole('button', { name: 'Close' }).click();
+
+  await page.reload();
+  await page.getByRole('button', { name: 'Settings' }).click();
+  await expect(panel.locator('[data-setting="gameplayTips"]')).not.toBeChecked();
+  await panel.getByRole('button', { name: 'Close' }).click();
+
+  await page.getByRole('button', { name: /Daily rewards/i }).click();
+  await panel.getByRole('button', { name: 'Claim daily reward' }).click();
+  await expect(panel.getByText('Reward collected')).toBeVisible();
+  await expect(page.locator('#home-coins-value')).toHaveText('100');
+  await expect(page.locator('#home-gems-value')).toHaveText('5');
+  await page.reload();
+  await expect(page.locator('#home-coins-value')).toHaveText('100');
+  await expect(page.locator('#home-gems-value')).toHaveText('5');
+});
+
+test('opens functional mission, achievement, collection, and leaderboard panels', async ({ page }) => {
+  await page.goto('/');
+  const panel = page.locator('#home-panel-modal');
+
+  await page.getByRole('button', { name: /Missions/i }).click();
+  await expect(panel.locator('.progress-card')).toHaveCount(3);
+  await panel.getByRole('button', { name: 'Close' }).click();
+
+  await page.getByRole('button', { name: /Achievements/i }).click();
+  await expect(panel.locator('.progress-card')).toHaveCount(6);
+  await panel.getByRole('button', { name: 'Close' }).click();
+
+  await page.getByRole('button', { name: /Collection/i }).click();
+  await expect(panel.getByText('Your memory deck is waiting')).toBeVisible();
+  await panel.getByRole('button', { name: 'Close' }).click();
+
+  await page.getByRole('button', { name: 'Leaderboards' }).click();
+  await expect(panel.getByText('No local records yet')).toBeVisible();
+});
+
+test('shows unlocked learning cards and local leaderboard records', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('snack-squad-player-v1', JSON.stringify({
+      version: 1,
+      stars: { 'forest-1': 3 },
+      bestLives: { 'forest-1': 20 },
+      highScores: { 'forest-1': 5400 },
+      leaderboard: [{
+        levelId: 'forest-1', levelName: 'Mossy Crossing', score: 5400, stars: 3, lives: 20,
+        achievedAt: '2026-07-23T00:00:00.000Z',
+      }],
+    }));
+  });
+  await page.goto('/');
+
+  await page.getByRole('button', { name: /Collection/i }).click();
+  const panel = page.locator('#home-panel-modal');
+  const card = panel.locator('[data-learning-card]');
+  await expect(card).toHaveCount(1);
+  await expect(card).toContainText('What connects every organism in a food web?');
+  if (process.env.CAPTURE_HOME) await page.screenshot({ path: 'tmp/collection-panel-qa.png', fullPage: true });
+  await card.click();
+  await expect(card).toHaveClass(/is-flipped/);
+  await panel.getByRole('button', { name: 'Close' }).click();
+
+  await page.getByRole('button', { name: 'Leaderboards' }).click();
+  await expect(panel.getByText('Mossy Crossing')).toBeVisible();
+  await expect(panel.getByText('5,400')).toBeVisible();
+});
+
 test('play opens a dedicated three-by-two world page', async ({ page }) => {
   await page.setViewportSize({ width: 1512, height: 1008 });
   await page.goto('/');
@@ -117,6 +202,13 @@ test('keeps the home dashboard usable on a phone', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Start adventure' })).toBeVisible();
   await expect(home.locator('[data-home-world]')).toHaveCount(6);
   expect(await home.evaluate((element) => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1);
+  await page.getByRole('button', { name: 'Settings' }).click();
+  const settings = page.locator('#home-panel-modal .home-panel-modal');
+  await expect(settings).toBeVisible();
+  const settingsBounds = await settings.boundingBox();
+  expect(settingsBounds).not.toBeNull();
+  expect(settingsBounds!.x).toBeGreaterThanOrEqual(0);
+  expect(settingsBounds!.x + settingsBounds!.width).toBeLessThanOrEqual(390);
   if (process.env.CAPTURE_HOME) {
     await page.screenshot({ path: 'tmp/home-screen-mobile-qa.png', fullPage: true });
   }

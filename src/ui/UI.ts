@@ -2,16 +2,27 @@ import { ARMOR_CODES, ARMOR_LABELS, LEVELS, TOWER_ORDER, WORLDS, getTowerDefinit
 import { DAMAGE_MATRIX, matchupLabel } from '../game/damage';
 import { Game } from '../game/Game';
 import { refreshIcons } from '../icons';
+import { LEARNING_CARDS } from '../learningCards';
 import type { PerformanceMonitor } from '../performance/PerformanceMonitor';
 import type { ArmorType, AttackType, GameEvent, LevelDefinition, TargetMode, TowerId } from '../types';
 import type { WorldId } from '../types';
 import { getTowerAssetUrl } from '../render/assets';
-import { starGlyphs, starsForVictory } from '../progression';
-
-interface ProgressRecord {
-  stars: Record<string, number>;
-  bestLives: Record<string, number>;
-}
+import {
+  MISSIONS,
+  canClaimDaily,
+  claimDaily,
+  claimMission,
+  createDefaultProgress,
+  loadPlayerProgress,
+  recordTowerBuilt,
+  recordVictory,
+  recordWaveCleared,
+  savePlayerProgress,
+  starGlyphs,
+  starsForVictory,
+  type PlayerProgress,
+  type VictoryReward,
+} from '../progression';
 
 const ATTACK_LABELS: Record<AttackType, string> = {
   normal: 'Normal',
@@ -24,7 +35,9 @@ const ATTACK_LABELS: Record<AttackType, string> = {
 export class UI {
   private selectedLevelId: string;
   private selectedWorldId: WorldId;
-  private progress: ProgressRecord;
+  private progress: PlayerProgress;
+  private soundMuted: boolean;
+  private lastVictoryReward: VictoryReward | null = null;
   private lastShopSignature = '';
   private levelModalOpenedFromGame = false;
 
@@ -51,6 +64,8 @@ export class UI {
   private readonly worldGrid = this.element('world-grid');
   private readonly homeScreen = this.element('home-screen');
   private readonly homeStatus = this.element('home-status');
+  private readonly homePanelModal = this.element('home-panel-modal');
+  private readonly homePanelContent = this.element('home-panel-content');
   private readonly deployButton = this.button('deploy-button');
   private readonly toastRegion = this.element('toast-region');
 
@@ -63,13 +78,16 @@ export class UI {
   ) {
     this.selectedLevelId = game.level.id;
     this.selectedWorldId = game.level.worldId;
-    this.progress = this.loadProgress();
+    this.progress = loadPlayerProgress();
+    this.soundMuted = initialMuted;
+    this.syncSoundToSetting();
+    this.applySettings();
     this.renderTowerShop();
     this.renderWorldGrid();
     this.renderLevelGrid();
     this.renderDamageMatrix();
     this.bindControls();
-    this.updateSoundButton(initialMuted);
+    this.updateSoundButton(this.soundMuted);
     refreshIcons();
     this.updateHomeProgress();
     this.render();
@@ -109,7 +127,13 @@ export class UI {
       this.toast(event.message, event.tone ?? 'default');
     }
     if (event.type === 'wave-cleared') {
+      recordWaveCleared(this.progress, event.wave + 1);
+      this.persistProgress();
       this.toast(`Wave ${event.wave + 1} cleared · +$${event.bonus}`, 'success');
+    }
+    if (event.type === 'tower-built') {
+      recordTowerBuilt(this.progress);
+      this.persistProgress();
     }
     if (event.type === 'outcome') {
       if (event.outcome === 'victory') this.saveVictory();
@@ -188,6 +212,10 @@ export class UI {
   }
 
   closeTopModal(): boolean {
+    if (this.homePanelModal.classList.contains('is-open')) {
+      this.homePanelModal.classList.remove('is-open');
+      return true;
+    }
     if (this.helpModal.classList.contains('is-open')) {
       this.toggleHelp(false);
       return true;
@@ -217,6 +245,12 @@ export class UI {
         this.levelModalOpenedFromGame = false;
         this.showMapSelect(worldButton.dataset.homeWorld as WorldId);
         this.levelModal.classList.add('is-open');
+        return;
+      }
+
+      const panelButton = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-home-panel]');
+      if (panelButton?.dataset.homePanel) {
+        this.openHomePanel(panelButton.dataset.homePanel);
         return;
       }
 
@@ -270,7 +304,21 @@ export class UI {
     this.button('world-back-button').addEventListener('click', () => this.showWorldSelect());
     this.button('help-button').addEventListener('click', () => this.toggleHelp(true));
     this.button('help-close-button').addEventListener('click', () => this.toggleHelp(false));
-    this.button('sound-button').addEventListener('click', () => this.updateSoundButton(this.onSoundToggle()));
+    this.button('sound-button').addEventListener('click', () => {
+      this.soundMuted = this.onSoundToggle();
+      this.progress.settings.soundEnabled = !this.soundMuted;
+      this.persistProgress();
+      this.updateSoundButton(this.soundMuted);
+    });
+    this.button('home-panel-close').addEventListener('click', () => this.homePanelModal.classList.remove('is-open'));
+    this.homePanelModal.addEventListener('click', (event) => {
+      if (event.target === this.homePanelModal) {
+        this.homePanelModal.classList.remove('is-open');
+        return;
+      }
+      this.handleHomePanelAction(event);
+    });
+    this.homePanelContent.addEventListener('change', (event) => this.handleSettingChange(event));
 
     this.worldGrid.addEventListener('click', (event) => {
       const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-world]');
@@ -550,7 +598,9 @@ export class UI {
     this.element('outcome-eyebrow').textContent = outcome === 'victory' ? 'SECTOR REPORT / COMPLETE' : 'SECTOR REPORT / BREACH';
     this.element('outcome-title').textContent = outcome === 'victory' ? 'Sector held.' : 'Core integrity lost.';
     this.element('outcome-copy').textContent = outcome === 'victory'
-      ? 'All eight waves have been neutralized. The sector record was saved locally.'
+      ? this.lastVictoryReward?.newHighScore
+        ? `New local high score: ${this.lastVictoryReward.score.toLocaleString()}. Rewards and a learning card were saved.`
+        : `Sector cleared. +${this.lastVictoryReward?.coins ?? 0} coins and +${this.lastVictoryReward?.gems ?? 0} gems were saved locally.`
       : `The route broke on wave ${this.game.currentWave + 1}. Recompose your damage types and try again.`;
     this.element('outcome-lives').textContent = String(this.game.lives);
     const earnedStars = outcome === 'victory' ? starsForVictory(this.game.lives, this.game.level.startLives) : 0;
@@ -569,39 +619,228 @@ export class UI {
   }
 
   private saveVictory(): void {
-    const stars = starsForVictory(this.game.lives, this.game.level.startLives);
-    this.progress.stars[this.game.level.id] = Math.max(this.progress.stars[this.game.level.id] ?? 0, stars);
-    this.progress.bestLives[this.game.level.id] = Math.max(
-      this.progress.bestLives[this.game.level.id] ?? 0,
-      this.game.lives,
-    );
-    localStorage.setItem('mono-ward-progress', JSON.stringify(this.progress));
+    this.lastVictoryReward = recordVictory(this.progress, {
+      levelId: this.game.level.id,
+      levelName: this.game.level.name,
+      lives: this.game.lives,
+      startLives: this.game.level.startLives,
+      cash: this.game.cash,
+    });
+    this.persistProgress();
     this.renderLevelGrid();
     this.renderWorldGrid();
     this.updateHomeProgress();
   }
 
-  private loadProgress(): ProgressRecord {
-    try {
-      const value = JSON.parse(localStorage.getItem('mono-ward-progress') ?? '') as ProgressRecord & { completed?: string[] };
-      if (typeof value.stars === 'object' && typeof value.bestLives === 'object') return value;
-      if (Array.isArray(value.completed) && typeof value.bestLives === 'object') {
-        return { stars: Object.fromEntries(value.completed.map((id) => [id, 1])), bestLives: value.bestLives };
-      }
-    } catch {
-      // A corrupt or absent local record should never block play.
-    }
-    return { stars: {}, bestLives: {} };
-  }
-
   private updateHomeProgress(): void {
     const total = Object.values(this.progress.stars).reduce((sum, stars) => sum + stars, 0);
     this.element('home-star-total').textContent = String(total);
+    this.element('home-player-name').textContent = this.progress.name;
+    this.element('home-player-level').textContent = String(this.progress.level);
+    this.element('home-energy-value').textContent = `${this.progress.energy}/100`;
+    this.element('home-coins-value').textContent = this.progress.coins.toLocaleString();
+    this.element('home-gems-value').textContent = this.progress.gems.toLocaleString();
+    this.element('home-power-value').textContent = this.progress.squadPower.toLocaleString();
+    this.element('home-streak-value').textContent = this.progress.streak > 0
+      ? `${this.progress.streak} ${this.progress.streak === 1 ? 'day' : 'days'}`
+      : 'Start today';
+    this.element('home-best-wave-value').textContent = this.progress.bestWave > 0
+      ? `Wave ${this.progress.bestWave}`
+      : 'No waves';
+    this.element('home-xp-fill').style.setProperty('--xp', `${(this.progress.xp % 1_000) / 10}%`);
+
+    const claimableMissions = MISSIONS.filter((mission) => (
+      mission.progress(this.progress) >= mission.target && !this.progress.claimedMissions.includes(mission.id)
+    )).length;
+    const achievements = this.achievementRecords().filter((entry) => entry.unlocked).length;
+    const collection = LEARNING_CARDS.filter((card) => (this.progress.stars[card.levelId] ?? 0) > 0).length;
+    this.setHomeBadge('home-missions-badge', claimableMissions);
+    this.setHomeBadge('home-daily-badge', canClaimDaily(this.progress) ? 1 : 0);
+    this.setHomeBadge('home-achievements-badge', achievements);
+    this.setHomeBadge('home-collection-badge', collection);
     for (const world of WORLDS) {
       const worldTotal = world.mapIds.reduce((sum, levelId) => sum + (this.progress.stars[levelId] ?? 0), 0);
       const target = this.homeScreen.querySelector<HTMLElement>(`[data-home-stars="${world.id}"]`);
       if (target) target.textContent = String(worldTotal);
     }
+  }
+
+  private openHomePanel(panel: string): void {
+    const eyebrow = this.element('home-panel-eyebrow');
+    const title = this.element('home-panel-title');
+    const copy = this.element('home-panel-copy');
+    const panelCopy: Record<string, [string, string, string]> = {
+      profile: ['LOCAL GUEST PROFILE', this.progress.name, 'Progress is saved only in this browser. Clearing site data starts a fresh guest profile.'],
+      settings: ['GAME SETTINGS', 'Settings', 'Choose how Snack Squad behaves on this device.'],
+      missions: ['MISSION BOARD', 'Missions', 'Complete learning and defense goals to earn local rewards.'],
+      daily: ['DAILY DROP', 'Daily rewards', 'Return each local calendar day for a fresh supply drop.'],
+      achievements: ['MILESTONES', 'Achievements', 'Permanent milestones from your learning adventure.'],
+      collection: ['MEMORY DECK', 'Learning collection', 'Clear levels to unlock two-sided study cards. Tap a card to flip it.'],
+      leaderboard: ['LOCAL RECORDS', 'Leaderboards', 'Each new level highscore is added to this browser-only leaderboard.'],
+    };
+    const text = panelCopy[panel] ?? panelCopy.profile;
+    eyebrow.textContent = text[0];
+    title.textContent = text[1];
+    copy.textContent = text[2];
+    this.homePanelContent.innerHTML = this.homePanelMarkup(panel);
+    this.homePanelModal.dataset.panel = panel;
+    this.homePanelModal.classList.add('is-open');
+    refreshIcons();
+    this.button('home-panel-close').focus();
+  }
+
+  private homePanelMarkup(panel: string): string {
+    if (panel === 'settings') return this.settingsMarkup();
+    if (panel === 'missions') return this.missionsMarkup();
+    if (panel === 'daily') return this.dailyMarkup();
+    if (panel === 'achievements') return this.achievementsMarkup();
+    if (panel === 'collection') return this.collectionMarkup();
+    if (panel === 'leaderboard') return this.leaderboardMarkup();
+    return `
+      <div class="progress-summary">
+        <div><small>Level</small><strong>${this.progress.level}</strong></div>
+        <div><small>XP</small><strong>${this.progress.xp.toLocaleString()}</strong></div>
+        <div><small>Stars</small><strong>${Object.values(this.progress.stars).reduce((sum, value) => sum + value, 0)}</strong></div>
+        <div><small>Power</small><strong>${this.progress.squadPower.toLocaleString()}</strong></div>
+      </div>
+      <div class="progress-summary">
+        <div><small>Coins</small><strong>${this.progress.coins.toLocaleString()}</strong></div>
+        <div><small>Gems</small><strong>${this.progress.gems.toLocaleString()}</strong></div>
+        <div><small>Victories</small><strong>${this.progress.victories}</strong></div>
+        <div><small>Best streak</small><strong>${this.progress.longestStreak || '—'}</strong></div>
+      </div>
+      <div class="empty-progress"><strong>Stored on this device</strong><p>No account or database is connected yet. This guest profile survives refreshes and browser restarts, but clearing site data resets it.</p></div>
+    `;
+  }
+
+  private settingsMarkup(): string {
+    const setting = (id: string, title: string, copy: string, checked: boolean) => `
+      <label class="setting-row"><span><strong>${title}</strong><small>${copy}</small></span><input type="checkbox" data-setting="${id}" ${checked ? 'checked' : ''}></label>`;
+    return `
+      <div class="settings-list">
+        ${setting('soundEnabled', 'Sound effects', 'Battle cues, rewards, and interface sounds.', this.progress.settings.soundEnabled)}
+        ${setting('reducedMotion', 'Reduce motion', 'Minimize flips, transitions, and animated effects.', this.progress.settings.reducedMotion)}
+        ${setting('gameplayTips', 'Gameplay tips', 'Show contextual guidance over the battlefield.', this.progress.settings.gameplayTips)}
+      </div>
+      <div class="settings-reset"><span>Reset stars, resources, records, cards, missions, and settings on this browser.</span><button class="panel-action panel-action--danger" type="button" data-reset-progress>Reset local progress</button></div>
+    `;
+  }
+
+  private missionsMarkup(): string {
+    return `<div class="panel-list">${MISSIONS.map((mission) => {
+      const progress = Math.min(mission.target, mission.progress(this.progress));
+      const complete = progress >= mission.target;
+      const claimed = this.progress.claimedMissions.includes(mission.id);
+      return `<article class="progress-card${complete ? ' is-complete' : ''}"><div><strong>${mission.title}</strong><p>${mission.copy}</p><small>Reward: ${mission.rewardCoins} coins${mission.rewardGems ? ` · ${mission.rewardGems} gem${mission.rewardGems === 1 ? '' : 's'}` : ''}</small></div><button class="panel-action" type="button" data-claim-mission="${mission.id}" ${!complete || claimed ? 'disabled' : ''}>${claimed ? 'Claimed' : complete ? 'Claim reward' : `${progress}/${mission.target}`}</button><span class="progress-meter"><i style="--progress:${progress / mission.target * 100}%"></i></span></article>`;
+    }).join('')}</div>`;
+  }
+
+  private dailyMarkup(): string {
+    const available = canClaimDaily(this.progress);
+    return `<div class="daily-reward"><i data-lucide="gift" aria-hidden="true"></i><strong>${available ? '100 coins + 5 gems' : 'Reward collected'}</strong><p>${available ? 'Your daily supply drop is ready. Claim it once on this device today.' : 'Come back after your next local calendar day begins.'}</p><button class="panel-action" type="button" data-claim-daily ${available ? '' : 'disabled'}>${available ? 'Claim daily reward' : 'Collected today'}</button></div>`;
+  }
+
+  private achievementsMarkup(): string {
+    return `<div class="panel-list">${this.achievementRecords().map((achievement) => `<article class="progress-card${achievement.unlocked ? ' is-complete' : ''}"><div><strong>${achievement.unlocked ? '✓' : '○'} ${achievement.title}</strong><p>${achievement.copy}</p></div><small>${achievement.unlocked ? 'UNLOCKED' : 'LOCKED'}</small></article>`).join('')}</div>`;
+  }
+
+  private collectionMarkup(): string {
+    const unlocked = LEARNING_CARDS.filter((card) => (this.progress.stars[card.levelId] ?? 0) > 0);
+    if (unlocked.length === 0) return '<div class="empty-progress"><strong>Your memory deck is waiting</strong><p>Clear any level to unlock its fact card. Each card has a question on the front and a learning answer on the back.</p></div>';
+    return `<div class="collection-grid">${unlocked.map((card) => `<button class="learning-card" type="button" data-learning-card aria-label="Flip ${card.subject} learning card"><span class="learning-card-inner"><span class="learning-card-face"><small>${card.subject} · Question</small><strong>${card.prompt}</strong><em>Tap to reveal</em></span><span class="learning-card-face learning-card-back"><small>${card.subject} · Answer</small><strong>${card.answer}</strong><em>Tap to review</em></span></span></button>`).join('')}</div>`;
+  }
+
+  private leaderboardMarkup(): string {
+    if (this.progress.leaderboard.length === 0) return '<div class="empty-progress"><strong>No local records yet</strong><p>Win a level to post your first score. Improving that level score replaces its previous entry.</p></div>';
+    return `<div class="leaderboard-list">${this.progress.leaderboard.map((entry) => `<article class="leaderboard-row"><span><strong>${entry.levelName}</strong><small>${starGlyphs(entry.stars)} · ${entry.lives} integrity</small></span><b>${entry.score.toLocaleString()}</b></article>`).join('')}</div>`;
+  }
+
+  private achievementRecords(): { title: string; copy: string; unlocked: boolean }[] {
+    const unlockedCards = LEARNING_CARDS.filter((card) => (this.progress.stars[card.levelId] ?? 0) > 0).length;
+    return [
+      { title: 'First contact', copy: 'Clear one wave.', unlocked: this.progress.totalWaves >= 1 },
+      { title: 'Learning defender', copy: 'Win your first level.', unlocked: this.progress.victories >= 1 },
+      { title: 'Untouched core', copy: 'Win with full integrity.', unlocked: this.progress.flawlessVictories >= 1 },
+      { title: 'Three-day rhythm', copy: 'Win on three consecutive days.', unlocked: this.progress.longestStreak >= 3 },
+      { title: 'Growing memory', copy: 'Unlock three learning cards.', unlocked: unlockedCards >= 3 },
+      { title: 'Squad architect', copy: 'Deploy ten towers across your runs.', unlocked: this.progress.totalTowers >= 10 },
+    ];
+  }
+
+  private handleHomePanelAction(event: Event): void {
+    const target = event.target as HTMLElement;
+    const card = target.closest<HTMLElement>('[data-learning-card]');
+    if (card) {
+      card.classList.toggle('is-flipped');
+      return;
+    }
+    const dailyButton = target.closest<HTMLButtonElement>('[data-claim-daily]');
+    if (dailyButton) {
+      const reward = claimDaily(this.progress);
+      if (reward) {
+        this.persistProgress();
+        this.updateHomeProgress();
+        this.toast(`Daily reward claimed · +${reward.coins} coins · +${reward.gems} gems`, 'success');
+        this.openHomePanel('daily');
+      }
+      return;
+    }
+    const missionButton = target.closest<HTMLButtonElement>('[data-claim-mission]');
+    if (missionButton?.dataset.claimMission && claimMission(this.progress, missionButton.dataset.claimMission)) {
+      this.persistProgress();
+      this.updateHomeProgress();
+      this.toast('Mission reward claimed.', 'success');
+      this.openHomePanel('missions');
+      return;
+    }
+    const resetButton = target.closest<HTMLButtonElement>('[data-reset-progress]');
+    if (!resetButton) return;
+    if (resetButton.dataset.confirm !== 'true') {
+      resetButton.dataset.confirm = 'true';
+      resetButton.textContent = 'Click again to reset';
+      return;
+    }
+    this.progress = createDefaultProgress();
+    localStorage.removeItem('mono-ward-progress');
+    this.syncSoundToSetting();
+    this.applySettings();
+    this.persistProgress();
+    this.renderLevelGrid();
+    this.renderWorldGrid();
+    this.updateHomeProgress();
+    this.toast('Local guest progress reset.', 'warning');
+    this.openHomePanel('settings');
+  }
+
+  private handleSettingChange(event: Event): void {
+    const input = (event.target as HTMLElement).closest<HTMLInputElement>('[data-setting]');
+    if (!input?.dataset.setting) return;
+    const setting = input.dataset.setting as keyof PlayerProgress['settings'];
+    this.progress.settings[setting] = input.checked;
+    if (setting === 'soundEnabled') this.syncSoundToSetting();
+    this.applySettings();
+    this.persistProgress();
+  }
+
+  private syncSoundToSetting(): void {
+    if (this.progress.settings.soundEnabled === this.soundMuted) this.soundMuted = this.onSoundToggle();
+    this.updateSoundButton(this.soundMuted);
+  }
+
+  private applySettings(): void {
+    document.body.classList.toggle('reduce-motion', this.progress.settings.reducedMotion);
+    document.body.classList.toggle('tips-disabled', !this.progress.settings.gameplayTips);
+  }
+
+  private persistProgress(): void {
+    savePlayerProgress(this.progress);
+    this.updateHomeProgress();
+  }
+
+  private setHomeBadge(id: string, value: number): void {
+    const badge = this.element(id);
+    badge.textContent = String(value);
+    badge.hidden = value <= 0;
   }
 
   private intelArmor(): ArmorType {

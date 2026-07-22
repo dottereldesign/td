@@ -16,24 +16,24 @@
       <div class="home-vignette" aria-hidden="true"></div>
       <div class="home-shell">
         <header class="home-topbar">
-          <button class="home-profile glass-panel" type="button" data-home-message="Player profiles are ready for the next progression update.">
+          <button class="home-profile glass-panel" id="home-profile-button" type="button" data-home-panel="profile" aria-haspopup="dialog">
             <span class="home-avatar"><img src="/src/assets/home/icons/profile-avatar.webp" alt="" /></span>
-            <span class="home-profile-copy"><strong>SnackHero</strong><span><i data-lucide="star" aria-hidden="true"></i> Level 25</span><span class="home-xp"><i style="--xp: 68%"></i></span></span>
+            <span class="home-profile-copy"><strong id="home-player-name">SnackHero</strong><span><i data-lucide="star" aria-hidden="true"></i> Level <em id="home-player-level">1</em></span><span class="home-xp"><i id="home-xp-fill" style="--xp: 0%"></i></span></span>
           </button>
           <div class="home-resources" aria-label="Player resources">
-            <button class="resource-chip resource-chip--energy" type="button" data-home-message="Energy recharges while you learn."><i data-lucide="zap" aria-hidden="true"></i><strong>78/100</strong><span>+</span></button>
-            <button class="resource-chip resource-chip--coins" type="button" data-home-message="Coins are earned by clearing waves and missions."><i data-lucide="coins" aria-hidden="true"></i><strong>12,450</strong><span>+</span></button>
-            <button class="resource-chip resource-chip--gems" type="button" data-home-message="Gems unlock special squad upgrades."><i data-lucide="gem" aria-hidden="true"></i><strong>985</strong><span>+</span></button>
-            <button class="home-settings" id="home-settings-button" type="button" aria-label="Settings" data-home-message="Settings will be available in the next update."><i data-lucide="settings" aria-hidden="true"></i></button>
+            <button class="resource-chip resource-chip--energy" type="button" data-home-panel="profile"><i data-lucide="zap" aria-hidden="true"></i><strong id="home-energy-value">0/100</strong><span>+</span></button>
+            <button class="resource-chip resource-chip--coins" type="button" data-home-panel="profile"><i data-lucide="coins" aria-hidden="true"></i><strong id="home-coins-value">0</strong><span>+</span></button>
+            <button class="resource-chip resource-chip--gems" type="button" data-home-panel="profile"><i data-lucide="gem" aria-hidden="true"></i><strong id="home-gems-value">0</strong><span>+</span></button>
+            <button class="home-settings" id="home-settings-button" type="button" aria-label="Settings" aria-haspopup="dialog" data-home-panel="settings"><i data-lucide="settings" aria-hidden="true"></i></button>
           </div>
         </header>
 
         <main class="home-stage">
           <nav class="home-quick-actions" aria-label="Player activities">
-            <button class="home-quick-button" type="button" data-home-message="Three new missions are waiting for you."><img src="/src/assets/home/icons/missions.webp" alt="" /><strong>Missions</strong><b>3</b></button>
-            <button class="home-quick-button" type="button" data-home-message="Your daily reward is ready to collect."><img src="/src/assets/home/icons/daily-rewards.webp" alt="" /><strong>Daily rewards</strong></button>
-            <button class="home-quick-button" type="button" data-home-message="Seven achievements are close to completion."><img src="/src/assets/home/icons/achievements.webp" alt="" /><strong>Achievements</strong><b>7</b></button>
-            <button class="home-quick-button" type="button" data-home-message="Your defender collection spans all six learning worlds."><img src="/src/assets/home/icons/collection.webp" alt="" /><strong>Collection</strong></button>
+            <button class="home-quick-button" type="button" data-home-panel="missions" aria-haspopup="dialog"><img src="/src/assets/home/icons/missions.webp" alt="" /><strong>Missions</strong><b id="home-missions-badge">3</b></button>
+            <button class="home-quick-button" type="button" data-home-panel="daily" aria-haspopup="dialog"><img src="/src/assets/home/icons/daily-rewards.webp" alt="" /><strong>Daily rewards</strong><b id="home-daily-badge">1</b></button>
+            <button class="home-quick-button" type="button" data-home-panel="achievements" aria-haspopup="dialog"><img src="/src/assets/home/icons/achievements.webp" alt="" /><strong>Achievements</strong><b id="home-achievements-badge">0</b></button>
+            <button class="home-quick-button" type="button" data-home-panel="collection" aria-haspopup="dialog"><img src="/src/assets/home/icons/collection.webp" alt="" /><strong>Collection</strong><b id="home-collection-badge">0</b></button>
           </nav>
 
           <section class="home-hero" aria-label="Snack Squad">
@@ -48,7 +48,7 @@
 
           <aside class="home-feature-cards">
             <button class="home-event-card" type="button" data-home-message="The Mold Invasion summer event is coming soon."><img src="/src/assets/home/panels/summer-event.webp" alt="" /><span><strong>Summer event!</strong><small>Mold invasion</small><b>Double rewards</b></span></button>
-            <button class="home-squad-card" type="button" data-home-message="Squad editing is coming soon."><img src="/src/assets/home/panels/squad.webp" alt="" /><span><small><i data-lucide="shield" aria-hidden="true"></i> Squad power</small><strong>12,580</strong><b>Edit squad</b></span></button>
+            <button class="home-squad-card" type="button" data-home-panel="profile"><img src="/src/assets/home/panels/squad.webp" alt="" /><span><small><i data-lucide="shield" aria-hidden="true"></i> Squad power</small><strong id="home-power-value">0</strong><b>View squad</b></span></button>
           </aside>
         </main>
 
@@ -63,9 +63,9 @@
         </section>
 
         <footer class="home-footer">
-          <button type="button" data-home-message="Keep learning every day to grow your streak."><i data-lucide="flame" aria-hidden="true"></i><span><small>Streak</small><strong>7 days</strong></span></button>
-          <button type="button" data-home-message="Your best run reached wave 128."><i data-lucide="skull" aria-hidden="true"></i><span><small>Best wave</small><strong>128</strong></span></button>
-          <button type="button" data-home-message="Leaderboards are coming soon."><i data-lucide="trophy" aria-hidden="true"></i><strong>Leaderboards</strong></button>
+          <button type="button" data-home-panel="achievements"><i data-lucide="flame" aria-hidden="true"></i><span><small>Streak</small><strong id="home-streak-value">Start today</strong></span></button>
+          <button type="button" data-home-panel="leaderboard"><i data-lucide="skull" aria-hidden="true"></i><span><small>Best wave</small><strong id="home-best-wave-value">No waves</strong></span></button>
+          <button type="button" data-home-panel="leaderboard" aria-haspopup="dialog"><i data-lucide="trophy" aria-hidden="true"></i><strong>Leaderboards</strong></button>
           <button type="button" data-home-message="The Parents Learning Hub is coming soon."><i data-lucide="users" aria-hidden="true"></i><span><strong>Parents</strong><small>Learning hub</small></span></button>
           <button class="home-premium" type="button" data-home-message="Premium rewards are coming soon."><i data-lucide="crown" aria-hidden="true"></i><span><strong>Get premium!</strong><small>Extra rewards · no ads</small></span></button>
         </footer>
@@ -206,6 +206,18 @@
         <span>ESC cancel · SPACE wave/pause · F speed · U upgrade</span>
         <span>Offline-ready static prototype · v0.1</span>
       </footer>
+    </div>
+
+    <div class="modal-backdrop home-panel-backdrop" id="home-panel-modal" role="dialog" aria-modal="true" aria-labelledby="home-panel-title">
+      <section class="modal home-panel-modal">
+        <button class="modal-close icon-button" id="home-panel-close" type="button" aria-label="Close">
+          <i data-lucide="x" aria-hidden="true"></i>
+        </button>
+        <span class="eyebrow" id="home-panel-eyebrow">GUEST PROGRESS</span>
+        <h2 id="home-panel-title">Progress</h2>
+        <p id="home-panel-copy">Your progress is stored in this browser.</p>
+        <div class="home-panel-content" id="home-panel-content"></div>
+      </section>
     </div>
 
     <section class="selection-screen" id="level-modal" aria-labelledby="level-modal-title">
