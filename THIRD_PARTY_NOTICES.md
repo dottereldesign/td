@@ -29,6 +29,15 @@ Wizino TD's terrain, route, towers, circular enemies, armor marks, projectiles, 
 - Source: <https://github.com/IBM/plex>
 - License copy: [public/licenses/OFL-1.1.txt](public/licenses/OFL-1.1.txt)
 
+## Titan One
+
+- Package: `@fontsource/titan-one`
+- Use: homepage Wizino TD wordmark
+- Copyright: Rodrigo Fuenzalida, with Reserved Font Name "Titan One"
+- License: SIL Open Font License 1.1
+- Source: <https://github.com/google/fonts/tree/main/ofl/titanone>
+- License copy: [public/licenses/OFL-1.1.txt](public/licenses/OFL-1.1.txt)
+
 ## A Brand New Wisdom
 
 - Author: hernandack

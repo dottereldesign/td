@@ -7,6 +7,7 @@ import '@fontsource/ibm-plex-mono/latin-400.css';
 import '@fontsource/ibm-plex-mono/latin-500.css';
 import '@fontsource/ibm-plex-mono/latin-600.css';
 import '@fontsource/ibm-plex-mono/latin-700.css';
+import '@fontsource/titan-one/latin-400.css';
 import './style.css';
 import { AudioEngine, type UiSound } from './audio';
 import { TOWER_ORDER } from './data';

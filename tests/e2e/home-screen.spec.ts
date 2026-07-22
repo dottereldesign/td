@@ -9,6 +9,7 @@ test('renders the illustrated home dashboard and opens a world', async ({ page }
   await expect(page.locator('link[rel="icon"][sizes="64x64"]')).toHaveAttribute('href', './favicon.webp');
   await expect(home).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Wizino TD' })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => document.fonts.check('64px "Titan One"'))).toBe(true);
   await expect(page.getByRole('button', { name: 'Start adventure' })).toBeVisible();
   await expect(page.locator('#home-player-level')).toHaveText('1');
   await expect(page.locator('#home-energy-value')).toHaveText('0/100');
@@ -37,6 +38,7 @@ test('renders the illustrated home dashboard and opens a world', async ({ page }
       ),
       sloganGap: element.querySelector<HTMLElement>('.home-hero p')!.getBoundingClientRect().top
         - element.querySelector<HTMLElement>('.home-hero h1')!.getBoundingClientRect().bottom,
+      wordmarkFont: getComputedStyle(element.querySelector<HTMLElement>('.home-hero h1')!).fontFamily,
     };
   });
 
@@ -47,6 +49,7 @@ test('renders the illustrated home dashboard and opens a world', async ({ page }
   expect(layout.footerBottom).toBeLessThanOrEqual(1008);
   expect(layout.heroCenterDelta).toBeLessThanOrEqual(1);
   expect(layout.sloganGap).toBeGreaterThanOrEqual(12);
+  expect(layout.wordmarkFont).toContain('Titan One');
 
   const quickActions = await home.locator('.home-quick-button').evaluateAll((buttons) => buttons.map((button) => {
     const buttonRect = button.getBoundingClientRect();
