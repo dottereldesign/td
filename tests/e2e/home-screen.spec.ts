@@ -28,6 +28,21 @@ test('renders the illustrated home dashboard and opens a world', async ({ page }
   expect(layout.horizontalOverflow).toBeLessThanOrEqual(1);
   expect(layout.footerBottom).toBeLessThanOrEqual(1008);
 
+  const quickActions = await home.locator('.home-quick-button').evaluateAll((buttons) => buttons.map((button) => {
+    const buttonRect = button.getBoundingClientRect();
+    const imageRect = button.querySelector('img')!.getBoundingClientRect();
+    const labelRect = button.querySelector('strong')!.getBoundingClientRect();
+    return {
+      width: buttonRect.width,
+      height: buttonRect.height,
+      imageCenterDelta: Math.abs((imageRect.left + imageRect.width / 2) - (buttonRect.left + buttonRect.width / 2)),
+      labelCenterDelta: Math.abs((labelRect.left + labelRect.width / 2) - (buttonRect.left + buttonRect.width / 2)),
+    };
+  }));
+  expect(quickActions.every(({ width }) => width >= 104 && width <= 116)).toBe(true);
+  expect(quickActions.every(({ height }) => Math.abs(height - 102) <= 1)).toBe(true);
+  expect(quickActions.every(({ imageCenterDelta, labelCenterDelta }) => imageCenterDelta <= 1 && labelCenterDelta <= 1)).toBe(true);
+
   if (process.env.CAPTURE_HOME) {
     await page.screenshot({ path: 'tmp/home-screen-qa.png', fullPage: true });
   }
