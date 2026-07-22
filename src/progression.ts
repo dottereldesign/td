@@ -1,4 +1,4 @@
-export const PLAYER_PROGRESS_KEY = 'snack-squad-player-v1';
+export const PLAYER_PROGRESS_KEY = 'wizino-td-player-v1';
 
 export interface PlayerSettings {
   soundEnabled: boolean;
@@ -68,7 +68,7 @@ export const MISSIONS: MissionDefinition[] = [
 export function createDefaultProgress(): PlayerProgress {
   return {
     version: 1,
-    name: 'SnackHero',
+    name: 'WizinoHero',
     level: 1,
     xp: 0,
     energy: 0,
@@ -99,7 +99,7 @@ export function loadPlayerProgress(storage: Pick<Storage, 'getItem'> = localStor
     const raw = storage.getItem(PLAYER_PROGRESS_KEY);
     if (raw) return normalizeProgress(JSON.parse(raw) as Partial<PlayerProgress>, defaults);
 
-    const legacyRaw = storage.getItem('mono-ward-progress');
+    const legacyRaw = storage.getItem('snack-squad-player-v1') ?? storage.getItem('mono-ward-progress');
     if (legacyRaw) {
       const legacy = JSON.parse(legacyRaw) as { stars?: Record<string, number>; bestLives?: Record<string, number>; completed?: string[] };
       const stars = legacy.stars ?? Object.fromEntries((legacy.completed ?? []).map((id) => [id, 1]));

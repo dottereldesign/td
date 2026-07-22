@@ -1,6 +1,6 @@
-# MONO//WARD
+# Wizino TD
 
-MONO//WARD is a complete single-player tower-defense prototype built for static hosting on GitHub Pages. It uses a full-viewport, high-DPI Canvas battlefield with responsive HTML controls layered over the map. No backend, account, or paid service is required.
+Wizino TD is a complete single-player learning tower-defense prototype built for static hosting on GitHub Pages. It uses a full-viewport, high-DPI Canvas battlefield with responsive HTML controls layered over the map. No backend, account, or paid service is required.
 
 For the complete product vision, educational goals, world roster, progression,
 gameplay rules, architecture, authoring conventions, and implementation status,

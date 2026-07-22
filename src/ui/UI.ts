@@ -1,6 +1,7 @@
 import { ARMOR_CODES, ARMOR_LABELS, LEVELS, TOWER_ORDER, WORLDS, getTowerDefinition, getWorld } from '../data';
 import { DAMAGE_MATRIX, matchupLabel } from '../game/damage';
 import { Game } from '../game/Game';
+import { HOME_WORLD_ART } from '../homeAssets';
 import { refreshIcons } from '../icons';
 import { LEARNING_CARDS } from '../learningCards';
 import type { PerformanceMonitor } from '../performance/PerformanceMonitor';
@@ -554,7 +555,7 @@ export class UI {
       const stars = world.mapIds.reduce((sum, id) => sum + (this.progress.stars[id] ?? 0), 0);
       return `
         <button class="world-card" type="button" data-world="${world.id}" style="--world-color:${world.color}">
-          <img class="selection-world-art" src="/src/assets/home/worlds/${world.id}.webp" alt="" />
+          <img class="selection-world-art" src="${HOME_WORLD_ART[world.id]}" alt="" />
           <span class="world-number">WORLD ${String(world.number).padStart(2, '0')}</span>
           <span class="selection-world-copy">
             <strong>${world.name}</strong>
@@ -671,7 +672,7 @@ export class UI {
     const copy = this.element('home-panel-copy');
     const panelCopy: Record<string, [string, string, string]> = {
       profile: ['LOCAL GUEST PROFILE', this.progress.name, 'Progress is saved only in this browser. Clearing site data starts a fresh guest profile.'],
-      settings: ['GAME SETTINGS', 'Settings', 'Choose how Snack Squad behaves on this device.'],
+      settings: ['GAME SETTINGS', 'Settings', 'Choose how Wizino TD behaves on this device.'],
       missions: ['MISSION BOARD', 'Missions', 'Complete learning and defense goals to earn local rewards.'],
       daily: ['DAILY DROP', 'Daily rewards', 'Return each local calendar day for a fresh supply drop.'],
       achievements: ['MILESTONES', 'Achievements', 'Permanent milestones from your learning adventure.'],
@@ -801,6 +802,7 @@ export class UI {
       return;
     }
     this.progress = createDefaultProgress();
+    localStorage.removeItem('snack-squad-player-v1');
     localStorage.removeItem('mono-ward-progress');
     this.syncSoundToSetting();
     this.applySettings();

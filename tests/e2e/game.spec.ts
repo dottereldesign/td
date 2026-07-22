@@ -21,9 +21,9 @@ test('deploys a tower and starts a wave', async ({ page }) => {
   const pageErrors: string[] = [];
   page.on('pageerror', (error) => pageErrors.push(error.message));
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: /Snack Squad/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Wizino TD/i })).toBeVisible();
   if (process.env.CAPTURE_VISUAL) {
-    await page.screenshot({ path: 'test-results/snack-squad-home.png', fullPage: true });
+    await page.screenshot({ path: 'test-results/wizino-td-home.png', fullPage: true });
   }
   await enterForest(page);
 
@@ -53,7 +53,7 @@ test('deploys a tower and starts a wave', async ({ page }) => {
   await expect(page.getByRole('button', { name: /Pause/i })).toBeEnabled();
   if (process.env.CAPTURE_VISUAL) {
     await page.waitForTimeout(400);
-    await page.screenshot({ path: 'test-results/mono-ward-desktop.png', fullPage: true });
+    await page.screenshot({ path: 'test-results/wizino-td-desktop.png', fullPage: true });
   }
   await page.getByRole('button', { name: 'Open field manual' }).click();
   await expect(page.getByRole('heading', { name: 'Win through composition.' })).toBeVisible();
@@ -105,7 +105,7 @@ test('keeps core controls usable on a phone viewport', async ({ page }) => {
   expect(rasterRequests.every((url) => /\.webp(?:\?|$)/i.test(url))).toBe(true);
   if (process.env.CAPTURE_VISUAL) {
     await page.waitForTimeout(400);
-    await page.screenshot({ path: 'test-results/mono-ward-mobile.png', fullPage: true });
+    await page.screenshot({ path: 'test-results/wizino-td-mobile.png', fullPage: true });
   }
   expect(pageErrors).toEqual([]);
 });
@@ -119,18 +119,18 @@ test('exposes a low-overhead performance monitor and F3 toggle', async ({ page }
   await expect(panel.getByText('Performance monitor')).toBeVisible();
   await page.waitForTimeout(2_000);
 
-  const snapshot = await page.evaluate(() => window.__MONO_WARD__.profiler.createReport().snapshot);
+  const snapshot = await page.evaluate(() => window.__WIZINO_TD__.profiler.createReport().snapshot);
   expect(snapshot.enabled).toBe(true);
   expect(snapshot.frame.samples).toBeGreaterThan(10);
   expect(snapshot.canvas?.megapixels).toBeLessThanOrEqual(2.21);
   expect(Number.isFinite(snapshot.phases.render.averageMs)).toBe(true);
   if (process.env.CAPTURE_VISUAL) {
-    await page.screenshot({ path: 'test-results/mono-ward-performance.png', fullPage: true });
+    await page.screenshot({ path: 'test-results/wizino-td-performance.png', fullPage: true });
   }
 
   await page.keyboard.press('F3');
   await expect(panel).toBeHidden();
-  expect(await page.evaluate(() => window.__MONO_WARD__.profiler.enabled)).toBe(false);
+  expect(await page.evaluate(() => window.__WIZINO_TD__.profiler.enabled)).toBe(false);
   await page.keyboard.press('F3');
   await expect(panel).toBeVisible();
 });
@@ -141,7 +141,7 @@ test('caps the canvas backing store on a 4K viewport', async ({ page }) => {
   await enterForest(page);
   await page.waitForTimeout(300);
 
-  const diagnostics = await page.evaluate(() => window.__MONO_WARD__.renderer.getDiagnostics());
+  const diagnostics = await page.evaluate(() => window.__WIZINO_TD__.renderer.getDiagnostics());
   expect(diagnostics.megapixels).toBeLessThanOrEqual(2.21);
   expect(diagnostics.effectiveDpr).toBeLessThan(0.55);
 });

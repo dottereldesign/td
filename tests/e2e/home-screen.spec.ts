@@ -5,8 +5,10 @@ test('renders the illustrated home dashboard and opens a world', async ({ page }
   await page.goto('/');
 
   const home = page.locator('#home-screen');
+  await expect(page).toHaveTitle('Wizino TD');
+  await expect(page.locator('link[rel="icon"][sizes="64x64"]')).toHaveAttribute('href', './favicon.webp');
   await expect(home).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Snack Squad' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Wizino TD' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Start adventure' })).toBeVisible();
   await expect(page.locator('#home-player-level')).toHaveText('1');
   await expect(page.locator('#home-energy-value')).toHaveText('0/100');
@@ -32,6 +34,8 @@ test('renders the illustrated home dashboard and opens a world', async ({ page }
           + element.querySelector<HTMLElement>('.home-hero')!.getBoundingClientRect().width / 2
           - (element.getBoundingClientRect().left + element.getBoundingClientRect().width / 2),
       ),
+      sloganGap: element.querySelector<HTMLElement>('.home-hero p')!.getBoundingClientRect().top
+        - element.querySelector<HTMLElement>('.home-hero h1')!.getBoundingClientRect().bottom,
     };
   });
 
@@ -40,6 +44,7 @@ test('renders the illustrated home dashboard and opens a world', async ({ page }
   expect(layout.horizontalOverflow).toBeLessThanOrEqual(1);
   expect(layout.footerBottom).toBeLessThanOrEqual(1008);
   expect(layout.heroCenterDelta).toBeLessThanOrEqual(1);
+  expect(layout.sloganGap).toBeGreaterThanOrEqual(12);
 
   const quickActions = await home.locator('.home-quick-button').evaluateAll((buttons) => buttons.map((button) => {
     const buttonRect = button.getBoundingClientRect();
@@ -133,7 +138,7 @@ test('opens functional mission, achievement, collection, and leaderboard panels'
 
 test('shows unlocked learning cards and local leaderboard records', async ({ page }) => {
   await page.addInitScript(() => {
-    localStorage.setItem('snack-squad-player-v1', JSON.stringify({
+    localStorage.setItem('wizino-td-player-v1', JSON.stringify({
       version: 1,
       stars: { 'forest-1': 3 },
       bestLives: { 'forest-1': 20 },
@@ -171,6 +176,11 @@ test('play opens a dedicated three-by-two world page', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Where will you explore?' })).toBeVisible();
   await expect(selection).not.toHaveAttribute('role', 'dialog');
   await expect(selection.locator('[data-world]')).toHaveCount(6);
+  await expect(selection.locator('.selection-world-art')).toHaveCount(6);
+  expect(await selection.locator('.selection-world-art').evaluateAll((images) => images.every((image) => {
+    const artwork = image as HTMLImageElement;
+    return artwork.complete && artwork.naturalWidth >= 100 && artwork.naturalHeight >= 100;
+  }))).toBe(true);
   await expect(page).toHaveURL(/#\/worlds$/);
 
   const layout = await selection.locator('#world-grid').evaluate((grid) => {
@@ -191,7 +201,7 @@ test('play opens a dedicated three-by-two world page', async ({ page }) => {
   await page.goBack();
   await expect(page.getByRole('heading', { name: 'Where will you explore?' })).toBeVisible();
   await page.goBack();
-  await expect(page.getByRole('heading', { name: 'Snack Squad' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Wizino TD' })).toBeVisible();
 });
 
 test('keeps the home dashboard usable on a phone', async ({ page }) => {

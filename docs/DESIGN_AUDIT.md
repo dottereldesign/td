@@ -1,4 +1,4 @@
-# MONO//WARD design and mechanics audit
+# Wizino TD design and mechanics audit
 
 This document records the research behind the prototype, what was borrowed at the pattern level, what was intentionally simplified, and where the combat rules differ from Warcraft III. It is a design audit, not a claim that all referenced games share identical systems.
 
@@ -62,7 +62,7 @@ Examples: +1 armor takes about 94.34% attack damage, +10 takes 62.5%, +20 takes 
 
 The [official Blizzard spell guide](https://classic.battle.net/war3/basics/spellbasics.shtml) says poison from the same source does not add DPS while poison from different attackers can stack. Warcraft poison has extra edge rules—such as physical/passive interactions and, in the classic rules, not delivering a killing blow. Unit examples include the [Dryad's Slow Poison](https://classic.battle.net/war3/nightelf/units/dryad.shtml) and the [Wind Rider's Envenomed Spears](https://classic.battle.net/war3/orc/units/windrider.shtml).
 
-MONO//WARD adapts those ideas:
+Wizino TD adapts those ideas:
 
 - A Toxin Post refreshes its own 6 DPS, 4.5-second effect.
 - Different posts stack, capped at three readable orbit dashes.

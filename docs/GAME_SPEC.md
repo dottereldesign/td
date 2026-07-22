@@ -1,4 +1,4 @@
-# MONO//WARD — complete game context
+# Wizino TD — complete game context
 
 This document is the primary context handoff for future developers and language
 models. Read it before changing game rules, progression, content, UI, assets, or
@@ -7,7 +7,7 @@ this document in the same change.
 
 ## 1. Product summary
 
-MONO//WARD is a single-player, browser-based tower-defence game for children.
+Wizino TD is a single-player, browser-based tower-defence game for children.
 Players protect imaginative learning worlds by placing six complementary tower
 types beside a fixed enemy route. Each world introduces a school-age subject
 through names, environments, short explanations, and eventually interactive
@@ -64,7 +64,7 @@ Home
 
 The home screen is the first thing a player sees. It contains:
 
-- the MONO//WARD title;
+- the Wizino TD title;
 - a one-sentence explanation of the adventure;
 - total stars earned out of 54;
 - the total scope: 18 maps across six worlds;
@@ -195,7 +195,7 @@ The best result is retained; replaying a map can increase but never reduce its
 star record. With 18 maps, the current maximum is 54 stars. Each world has a
 maximum of nine.
 
-Progress is stored locally under `mono-ward-progress`:
+Progress is stored locally under `wizino-td-player-v1`:
 
 ```ts
 interface ProgressRecord {

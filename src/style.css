@@ -272,6 +272,14 @@ button:disabled {
   letter-spacing: -0.04em;
 }
 
+.brand-mark img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: 9px;
+  object-fit: cover;
+}
+
 .brand > span:not(.brand-mark) {
   min-width: 0;
   display: grid;
@@ -1493,11 +1501,11 @@ button:disabled {
 .home-quick-button b { position: absolute; top: -7px; right: -7px; width: 28px; height: 28px; display: grid; place-items: center; border: 2px solid white; border-radius: 50%; background: linear-gradient(#ff4b43, #cf1014); box-shadow: 0 3px 0 #6c0710, 0 0 12px rgba(255,45,54,.7); font: 1000 14px/1 var(--round); }
 
 .home-hero { grid-area: hero; min-height: 0; display: grid; place-content: center; justify-items: center; align-self: stretch; padding: 2px 14px; text-align: center; }
-.home-hero h1 { margin: 0; display: grid; font: 1000 clamp(54px, 6vw, 96px)/.68 var(--round); letter-spacing: -.075em; text-transform: uppercase; transform: rotate(-1deg); filter: drop-shadow(0 9px 0 rgba(2, 10, 24, .78)) drop-shadow(0 16px 24px rgba(0,0,0,.45)); }
+.home-hero h1 { margin: 0; display: grid; row-gap: clamp(3px, .45vw, 7px); font: 1000 clamp(54px, 6vw, 96px)/.76 var(--round); letter-spacing: -.075em; text-transform: uppercase; transform: rotate(-1deg); filter: drop-shadow(0 9px 0 rgba(2, 10, 24, .78)) drop-shadow(0 16px 24px rgba(0,0,0,.45)); }
 .home-hero h1 span { position: relative; z-index: 1; -webkit-text-stroke: clamp(2px, .32vw, 5px) #14200d; paint-order: stroke fill; }
 .home-hero h1 span:first-child { color: #ffd724; text-shadow: 0 4px 0 #ff8a00, 0 8px 0 #9e2e00, inset 0 2px 0 white; }
 .home-hero h1 span:last-child { z-index: 2; color: #26d9ff; text-shadow: 0 4px 0 #0088d5, 0 8px 0 #06458d; }
-.home-hero p { margin: 13px 0 12px; padding: 5px 18px; border: 2px solid #317f1f; border-radius: 99px 10px 99px 10px; background: linear-gradient(#7fd220, #287e19); box-shadow: inset 0 2px 0 rgba(255,255,255,.38), 0 4px 0 #17470e; color: #fffbd3; font: 1000 clamp(9px, 1vw, 14px)/1 var(--round); letter-spacing: .04em; text-transform: uppercase; text-shadow: 0 2px 0 #31550d; }
+.home-hero p { margin: clamp(20px, 2.4vh, 28px) 0 12px; padding: 5px 18px; border: 2px solid #317f1f; border-radius: 99px 10px 99px 10px; background: linear-gradient(#7fd220, #287e19); box-shadow: inset 0 2px 0 rgba(255,255,255,.38), 0 4px 0 #17470e; color: #fffbd3; font: 1000 clamp(9px, 1vw, 14px)/1 var(--round); letter-spacing: .04em; text-transform: uppercase; text-shadow: 0 2px 0 #31550d; }
 .home-play { width: min(340px, 64%); min-height: clamp(66px, 8vh, 86px); border: 3px solid #73fb28; border-radius: 26px; background: linear-gradient(180deg, #55ef20, #14a80f 54%, #078409); box-shadow: inset 0 4px 0 rgba(255,255,255,.55), inset 0 -8px 12px rgba(0,83,6,.45), 0 7px 0 #075513, 0 0 25px rgba(64,255,44,.55), 0 16px 28px rgba(0,0,0,.38); font: 1000 clamp(34px, 3.7vw, 58px)/1 var(--round); letter-spacing: .04em; text-transform: uppercase; text-shadow: 0 4px 0 #3b6235; }
 .home-modes { width: min(620px, 100%); margin-top: 13px; display: grid; grid-template-columns: 1.25fr .95fr; gap: 9px; }
 .home-modes button { min-height: 49px; padding: 8px 15px; display: flex; align-items: center; justify-content: center; gap: 9px; border: 2px solid #df71ff; border-radius: 18px; background: linear-gradient(#b51ce9, #6e08b5); box-shadow: inset 0 3px 0 rgba(255,255,255,.35), 0 5px 0 #390473, 0 0 18px rgba(189, 36, 255, .45); font: 1000 clamp(10px, 1.1vw, 15px)/1 var(--round); text-transform: uppercase; text-shadow: 0 3px 0 #3b075c; }

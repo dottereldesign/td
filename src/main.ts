@@ -170,7 +170,7 @@ requestAnimationFrame(frame);
 
 declare global {
   interface Window {
-    __MONO_WARD__: {
+    __WIZINO_TD__: {
       game: Game;
       ui: UI;
       renderer: Renderer;
@@ -179,4 +179,4 @@ declare global {
   }
 }
 
-window.__MONO_WARD__ = { game, ui, renderer, profiler: performanceMonitor };
+window.__WIZINO_TD__ = { game, ui, renderer, profiler: performanceMonitor };

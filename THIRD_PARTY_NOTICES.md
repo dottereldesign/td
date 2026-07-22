@@ -1,6 +1,6 @@
 # Third-party notices
 
-MONO//WARD's terrain, route, towers, circular enemies, armor marks, projectiles, and effects are original Canvas primitives. The following permissively licensed online assets are bundled locally through npm; no runtime hotlinks are used.
+Wizino TD's terrain, route, towers, circular enemies, armor marks, projectiles, and effects are original Canvas primitives. The following permissively licensed online assets are bundled locally through npm; no runtime hotlinks are used.
 
 ## Lucide
 

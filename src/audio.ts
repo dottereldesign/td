@@ -6,7 +6,7 @@ export class AudioEngine {
   private lastShotAt = 0;
 
   constructor() {
-    this.muted = localStorage.getItem('mono-ward-muted') === 'true';
+    this.muted = (localStorage.getItem('wizino-td-muted') ?? localStorage.getItem('mono-ward-muted')) === 'true';
   }
 
   unlock(): void {
@@ -17,7 +17,7 @@ export class AudioEngine {
 
   toggle(): boolean {
     this.muted = !this.muted;
-    localStorage.setItem('mono-ward-muted', String(this.muted));
+    localStorage.setItem('wizino-td-muted', String(this.muted));
     if (!this.muted) {
       this.unlock();
       this.tone(420, 0.05, 0.035, 'sine');

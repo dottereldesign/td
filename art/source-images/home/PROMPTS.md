@@ -2,7 +2,7 @@
 
 These assets were generated individually with the built-in image-generation
 workflow. All interface borders, labels, counters, badges, buttons, and the
-`SNACK SQUAD` wordmark are HTML/CSS; generated images intentionally contain no
+`WIZINO TD` wordmark are HTML/CSS; generated images intentionally contain no
 text. The supplied composition reference is stored at
 `art/reference/ui/home-screen-reference.png`.
 
@@ -102,3 +102,29 @@ no generated border.
 
 After removing chroma keys into `tmp/imagegen/home-alpha/`, rebuild optimized
 runtime assets with `python scripts/process_home_assets.py`.
+
+## Wizino TD brand icon
+
+The master brand icon was generated with the built-in image-generation workflow
+and then exported as WebP at both favicon and app-icon sizes:
+
+- `public/favicon.webp` — 64 × 64 lossless favicon
+- `public/wizino-icon-512.webp` — 512 × 512 high-quality app icon
+
+> Use case: logo-brand. Asset type: master square brand mark for a browser game
+> favicon and larger app icon. Create an original, highly recognizable emblem
+> for a cheerful children's educational tower-defense game named Wizino TD. Do
+> not include the name or any letters. One bold magical wizard hat symbol with a
+> playful curled tip, shaped as a strong simple silhouette, centered inside a
+> chunky shield-like circular badge; one large gold four-point sparkle on the
+> hat suggests discovery and learning. Polished glossy 3D mobile-game icon,
+> chunky rounded toy forms, thick clean dark-navy outlines, subtle bevels,
+> professional app-store logo quality. Perfectly square, single centered symbol,
+> symmetrical visual weight, subject filling about 82% of the canvas, generous
+> safe margin, no tiny details; identifiable at 16 × 16 pixels and premium at
+> 512 × 512. Vivid cyan and electric-blue hat, warm golden-yellow sparkle and
+> trim, deep navy and royal-purple badge background, tiny lime-green accent;
+> extremely high contrast. Joyful, adventurous, magical, with bright controlled
+> rim lighting. No words, letters, numbers, characters, faces, extra objects,
+> busy scenery, thin lines, or watermark. Solid finished badge background
+> extending to every edge, not transparent.

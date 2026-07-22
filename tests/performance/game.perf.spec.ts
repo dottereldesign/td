@@ -45,7 +45,7 @@ test('busy combat remains inside the interactive frame budget', async ({ page, c
     ? { towers: 40, enemies: 80, poisonEvery: 4 }
     : { towers: 28, enemies: 48, poisonEvery: 8 };
   await page.evaluate(({ towers, enemies, poisonEvery }) => {
-    const game = window.__MONO_WARD__.game;
+    const game = window.__WIZINO_TD__.game;
     const productionEventHandler = game.onEvent;
     game.onEvent = () => undefined;
     game.cash = 100_000;
@@ -131,7 +131,7 @@ test('busy combat remains inside the interactive frame budget', async ({ page, c
     const averageFrameMs = intervals.reduce((sum, value) => sum + value, 0) / intervals.length;
     const p95FrameMs = ordered[Math.min(ordered.length - 1, Math.floor(ordered.length * 0.95))];
     const canvas = document.querySelector<HTMLCanvasElement>('#game-canvas')!;
-    const game = window.__MONO_WARD__.game;
+    const game = window.__WIZINO_TD__.game;
     return {
       averageFps: 1_000 / averageFrameMs,
       averageFrameMs,
@@ -151,7 +151,7 @@ test('busy combat remains inside the interactive frame budget', async ({ page, c
   }, { sampleDuration: stress ? 3_000 : 4_000 });
 
   const after = metricMap((await session.send('Performance.getMetrics')).metrics as CdpMetric[]);
-  const appReport = await page.evaluate(() => window.__MONO_WARD__.profiler.createReport());
+  const appReport = await page.evaluate(() => window.__WIZINO_TD__.profiler.createReport());
   const report = {
     ...sample,
     app: appReport.snapshot,
