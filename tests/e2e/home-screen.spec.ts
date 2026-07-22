@@ -34,7 +34,58 @@ test('renders the illustrated home dashboard and opens a world', async ({ page }
 
   await page.getByRole('button', { name: /Forest World/i }).click();
   await expect(page.getByRole('heading', { name: 'Forest World' })).toBeVisible();
+  await expect(page.locator('#world-grid')).toBeHidden();
+  await expect(page.locator('#level-grid')).toBeVisible();
+  await expect(page.locator('[data-level]')).toHaveCount(3);
   await expect(page.getByRole('button', { name: /Deploy to sector/i })).toBeVisible();
+  await expect(page).toHaveURL(/#\/worlds\/forest\/levels$/);
+
+  const levelLayout = await page.locator('[data-level]').evaluateAll((cards) => {
+    const rects = cards.map((card) => card.getBoundingClientRect());
+    const xs = rects.map((rect) => rect.x);
+    return {
+      rows: new Set(rects.map((rect) => Math.round(rect.y))).size,
+      horizontalStagger: Math.max(...xs) - Math.min(...xs),
+    };
+  });
+  expect(levelLayout.rows).toBe(3);
+  expect(levelLayout.horizontalStagger).toBeLessThanOrEqual(10);
+  if (process.env.CAPTURE_HOME) {
+    await page.screenshot({ path: 'tmp/level-select-page-qa.png', fullPage: true });
+  }
+});
+
+test('play opens a dedicated three-by-two world page', async ({ page }) => {
+  await page.setViewportSize({ width: 1512, height: 1008 });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Start adventure' }).click();
+
+  const selection = page.locator('#level-modal');
+  await expect(selection).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Where will you explore?' })).toBeVisible();
+  await expect(selection).not.toHaveAttribute('role', 'dialog');
+  await expect(selection.locator('[data-world]')).toHaveCount(6);
+  await expect(page).toHaveURL(/#\/worlds$/);
+
+  const layout = await selection.locator('#world-grid').evaluate((grid) => {
+    const style = getComputedStyle(grid);
+    return {
+      columns: style.gridTemplateColumns.split(' ').length,
+      rows: style.gridTemplateRows.split(' ').length,
+    };
+  });
+  expect(layout).toEqual({ columns: 3, rows: 2 });
+
+  if (process.env.CAPTURE_HOME) {
+    await page.screenshot({ path: 'tmp/world-select-page-qa.png', fullPage: true });
+  }
+
+  await page.getByRole('button', { name: /Workshop World/i }).click();
+  await expect(page.getByRole('heading', { name: 'Workshop World' })).toBeVisible();
+  await page.goBack();
+  await expect(page.getByRole('heading', { name: 'Where will you explore?' })).toBeVisible();
+  await page.goBack();
+  await expect(page.getByRole('heading', { name: 'Snack Squad' })).toBeVisible();
 });
 
 test('keeps the home dashboard usable on a phone', async ({ page }) => {

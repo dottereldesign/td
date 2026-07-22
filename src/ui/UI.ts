@@ -147,7 +147,7 @@ export class UI {
     this.levelModal.classList.add('is-open');
   }
 
-  private showWorldSelect(): void {
+  private showWorldSelect(updateRoute = true): void {
     this.worldGrid.hidden = false;
     this.levelGrid.hidden = true;
     this.deployButton.hidden = true;
@@ -156,9 +156,10 @@ export class UI {
     this.element('level-modal-title').textContent = 'Where will you explore?';
     this.element('select-copy').textContent = 'Each world has three maps, six themed towers, and a different family of ideas to discover.';
     this.renderWorldGrid();
+    if (updateRoute) this.pushRoute('#/worlds');
   }
 
-  private showMapSelect(worldId: WorldId): void {
+  private showMapSelect(worldId: WorldId, updateRoute = true): void {
     this.selectedWorldId = worldId;
     const world = getWorld(worldId);
     const levels = LEVELS.filter((level) => level.worldId === worldId);
@@ -171,17 +172,19 @@ export class UI {
     this.element('level-modal-title').textContent = world.name;
     this.element('select-copy').textContent = `${world.description} Choose one of three maps.`;
     this.renderLevelGrid();
+    if (updateRoute) this.pushRoute(`#/worlds/${worldId}/levels`);
   }
 
-  private showHome(): void {
+  private showHome(updateRoute = true): void {
     if (this.game.phase === 'wave' && !this.game.paused) this.game.togglePause(true);
     this.levelModal.classList.remove('is-open');
     this.homeScreen.classList.add('is-open');
     this.updateHomeProgress();
+    if (updateRoute) this.pushRoute('#/home');
   }
 
   hasOpenModal(): boolean {
-    return document.querySelector('.modal-backdrop.is-open') !== null;
+    return document.querySelector('.modal-backdrop.is-open') !== null || this.levelModal.classList.contains('is-open');
   }
 
   closeTopModal(): boolean {
@@ -189,8 +192,10 @@ export class UI {
       this.toggleHelp(false);
       return true;
     }
-    if (this.levelModal.classList.contains('is-open') && this.levelModalOpenedFromGame) {
-      this.levelModal.classList.remove('is-open');
+    if (this.levelModal.classList.contains('is-open')) {
+      if (!this.levelGrid.hidden) this.showWorldSelect();
+      else if (this.levelModalOpenedFromGame) this.levelModal.classList.remove('is-open');
+      else this.showHome();
       return true;
     }
     return false;
@@ -280,6 +285,21 @@ export class UI {
     });
     this.deployButton.addEventListener('click', () => this.deploySelectedLevel());
 
+    window.addEventListener('popstate', () => {
+      const levelRoute = window.location.hash.match(/^#\/worlds\/(forest|workshop|word|number|space|music)\/levels$/);
+      if (levelRoute) {
+        this.homeScreen.classList.remove('is-open');
+        this.showMapSelect(levelRoute[1] as WorldId, false);
+        this.levelModal.classList.add('is-open');
+      } else if (window.location.hash === '#/worlds') {
+        this.homeScreen.classList.remove('is-open');
+        this.showWorldSelect(false);
+        this.levelModal.classList.add('is-open');
+      } else {
+        this.showHome(false);
+      }
+    });
+
     this.button('outcome-retry').addEventListener('click', () => {
       this.outcomeModal.classList.remove('is-open');
       this.game.startLevel(this.game.level.id);
@@ -294,17 +314,13 @@ export class UI {
     this.helpModal.addEventListener('click', (event) => {
       if (event.target === this.helpModal) this.toggleHelp(false);
     });
-    this.levelModal.addEventListener('click', (event) => {
-      if (event.target === this.levelModal && this.levelModalOpenedFromGame) {
-        this.levelModal.classList.remove('is-open');
-      }
-    });
   }
 
   private deploySelectedLevel(): void {
     this.game.startLevel(this.selectedLevelId);
     this.levelModal.classList.remove('is-open');
     this.levelModalOpenedFromGame = true;
+    this.pushRoute(`#/play/${this.selectedLevelId}`);
     this.onLevelReset();
     this.renderTowerShop();
     this.toast(`${this.game.level.name} sector loaded.`, 'success');
@@ -490,12 +506,14 @@ export class UI {
       const stars = world.mapIds.reduce((sum, id) => sum + (this.progress.stars[id] ?? 0), 0);
       return `
         <button class="world-card" type="button" data-world="${world.id}" style="--world-color:${world.color}">
+          <img class="selection-world-art" src="/src/assets/home/worlds/${world.id}.webp" alt="" />
           <span class="world-number">WORLD ${String(world.number).padStart(2, '0')}</span>
-          <span class="world-icon"><i data-lucide="${world.icon}" aria-hidden="true"></i></span>
-          <strong>${world.name}</strong>
-          <small>${world.theme}</small>
-          <p>${world.description}</p>
-          <span class="world-record"><b>★ ${stars} / 9</b><em>${world.artStatus === 'complete' ? 'ART READY' : 'PLAYABLE · ART LATER'}</em></span>
+          <span class="selection-world-copy">
+            <strong>${world.name}</strong>
+            <small>${world.theme}</small>
+            <p>${world.description}</p>
+            <span class="world-record"><b>★ ${stars} / 9</b><em>3 MAPS</em></span>
+          </span>
         </button>
       `;
     }).join('');
@@ -596,6 +614,10 @@ export class UI {
     if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
     if (value >= 1_000) return `${(value / 1_000).toFixed(1)}K`;
     return `${Math.round(value)}`;
+  }
+
+  private pushRoute(hash: string): void {
+    if (window.location.hash !== hash) window.history.pushState({}, '', hash);
   }
 
   private formatMultiplier(value: number): string {
