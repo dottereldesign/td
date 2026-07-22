@@ -81,7 +81,9 @@ export class UI {
     this.selectedWorldId = game.level.worldId;
     this.progress = loadPlayerProgress();
     this.soundMuted = initialMuted;
-    this.syncSoundToSetting();
+    // The dedicated audio preference is authoritative so older guest profiles
+    // that inherited the former sound-on default still begin safely muted.
+    this.progress.settings.soundEnabled = !this.soundMuted;
     this.applySettings();
     this.renderTowerShop();
     this.renderWorldGrid();
@@ -615,6 +617,7 @@ export class UI {
     const button = this.button('sound-button');
     button.innerHTML = `<i data-lucide="${muted ? 'volume-x' : 'volume-2'}" aria-hidden="true"></i>`;
     button.setAttribute('aria-label', muted ? 'Enable sound' : 'Mute sound');
+    button.setAttribute('aria-pressed', String(!muted));
     button.title = muted ? 'Enable sound' : 'Mute sound';
     refreshIcons();
   }
@@ -719,7 +722,7 @@ export class UI {
       <label class="setting-row"><span><strong>${title}</strong><small>${copy}</small></span><input type="checkbox" data-setting="${id}" ${checked ? 'checked' : ''}></label>`;
     return `
       <div class="settings-list">
-        ${setting('soundEnabled', 'Sound effects', 'Battle cues, rewards, and interface sounds.', this.progress.settings.soundEnabled)}
+        ${setting('soundEnabled', 'Music & sound', 'Magical background music, battle cues, rewards, and interface sounds.', this.progress.settings.soundEnabled)}
         ${setting('reducedMotion', 'Reduce motion', 'Minimize flips, transitions, and animated effects.', this.progress.settings.reducedMotion)}
         ${setting('gameplayTips', 'Gameplay tips', 'Show contextual guidance over the battlefield.', this.progress.settings.gameplayTips)}
       </div>

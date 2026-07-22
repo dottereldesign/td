@@ -104,9 +104,6 @@
           <button class="icon-button" id="performance-button" type="button" aria-label="Open performance monitor" aria-pressed="false" title="Performance monitor (F3)">
             <i data-lucide="activity" aria-hidden="true"></i>
           </button>
-          <button class="icon-button" id="sound-button" type="button" aria-label="Mute sound" title="Mute sound">
-            <i data-lucide="volume-2" aria-hidden="true"></i>
-          </button>
           <button class="icon-button" id="help-button" type="button" aria-label="Open field manual" title="Field manual">
             <i data-lucide="circle-help" aria-hidden="true"></i>
           </button>
@@ -208,6 +205,11 @@
         <span>Offline-ready static prototype · v0.1</span>
       </footer>
     </div>
+
+    <audio id="background-music" src="./audio/wizino-magical-loop.ogg" preload="none" loop></audio>
+    <button class="global-audio-toggle" id="sound-button" type="button" aria-label="Enable sound" aria-pressed="false" title="Enable sound">
+      <i data-lucide="volume-x" aria-hidden="true"></i>
+    </button>
 
     <div class="modal-backdrop home-panel-backdrop" id="home-panel-modal" role="dialog" aria-modal="true" aria-labelledby="home-panel-title">
       <section class="modal home-panel-modal">

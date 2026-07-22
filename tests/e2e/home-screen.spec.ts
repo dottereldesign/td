@@ -118,6 +118,38 @@ test('persists guest settings and daily rewards in local browser storage', async
   await expect(page.locator('#home-gems-value')).toHaveText('5');
 });
 
+test('keeps the lightweight music loop muted until the player enables it', async ({ page }) => {
+  await page.setViewportSize({ width: 1512, height: 1008 });
+  await page.goto('/');
+
+  const toggle = page.getByRole('button', { name: 'Enable sound' });
+  const music = page.locator('#background-music');
+  await expect(toggle).toBeVisible();
+  await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+  await expect(music).toHaveAttribute('preload', 'none');
+  await expect(music).toHaveAttribute('loop', '');
+  expect(await music.evaluate((audio: HTMLAudioElement) => audio.paused)).toBe(true);
+
+  const bounds = await toggle.boundingBox();
+  expect(bounds).not.toBeNull();
+  expect(Math.abs(1512 - (bounds!.x + bounds!.width) - 16)).toBeLessThanOrEqual(1);
+  expect(Math.abs(1008 - (bounds!.y + bounds!.height) - 16)).toBeLessThanOrEqual(1);
+
+  await toggle.click();
+  await expect(page.getByRole('button', { name: 'Mute sound' })).toHaveAttribute('aria-pressed', 'true');
+  await expect.poll(() => music.evaluate((audio: HTMLAudioElement) => audio.paused)).toBe(false);
+
+  await page.reload();
+  await expect(page.getByRole('button', { name: 'Mute sound' })).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('button', { name: 'Start adventure' }).click();
+  await expect(page.getByRole('button', { name: 'Mute sound' })).toBeVisible();
+  await expect.poll(() => music.evaluate((audio: HTMLAudioElement) => audio.paused)).toBe(false);
+
+  await page.getByRole('button', { name: 'Mute sound' }).click();
+  await expect(page.getByRole('button', { name: 'Enable sound' })).toHaveAttribute('aria-pressed', 'false');
+  expect(await music.evaluate((audio: HTMLAudioElement) => audio.paused)).toBe(true);
+});
+
 test('opens functional mission, achievement, collection, and leaderboard panels', async ({ page }) => {
   await page.goto('/');
   const panel = page.locator('#home-panel-modal');

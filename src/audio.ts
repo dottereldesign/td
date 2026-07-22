@@ -3,22 +3,28 @@ import type { GameEvent } from './types';
 export class AudioEngine {
   muted: boolean;
   private context: AudioContext | null = null;
+  private readonly music = document.getElementById('background-music') as HTMLAudioElement | null;
   private lastShotAt = 0;
 
   constructor() {
-    this.muted = (localStorage.getItem('wizino-td-muted') ?? localStorage.getItem('mono-ward-muted')) === 'true';
+    const storedPreference = localStorage.getItem('wizino-td-muted') ?? localStorage.getItem('mono-ward-muted');
+    this.muted = storedPreference === null ? true : storedPreference !== 'false';
+    if (this.music) this.music.volume = 0.18;
   }
 
   unlock(): void {
     if (this.muted) return;
     if (!this.context) this.context = new AudioContext();
     if (this.context.state === 'suspended') void this.context.resume();
+    if (this.music?.paused) void this.music.play().catch(() => undefined);
   }
 
   toggle(): boolean {
     this.muted = !this.muted;
     localStorage.setItem('wizino-td-muted', String(this.muted));
-    if (!this.muted) {
+    if (this.muted) {
+      this.music?.pause();
+    } else {
       this.unlock();
       this.tone(420, 0.05, 0.035, 'sine');
     }

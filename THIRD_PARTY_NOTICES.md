@@ -29,4 +29,12 @@ Wizino TD's terrain, route, towers, circular enemies, armor marks, projectiles, 
 - Source: <https://github.com/IBM/plex>
 - License copy: [public/licenses/OFL-1.1.txt](public/licenses/OFL-1.1.txt)
 
+## A Brand New Wisdom
+
+- Author: hernandack
+- Use: Seamless magical background-music loop
+- License: CC0 1.0 Universal (public-domain dedication)
+- Source: <https://opengameart.org/content/short-loops-background-music-pack>
+- Bundled file: [public/audio/wizino-magical-loop.ogg](public/audio/wizino-magical-loop.ogg)
+
 Font packages are delivered by [Fontsource](https://fontsource.org/).

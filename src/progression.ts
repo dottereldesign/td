@@ -89,7 +89,7 @@ export function createDefaultProgress(): PlayerProgress {
     lastVictoryDate: null,
     lastDailyClaim: null,
     claimedMissions: [],
-    settings: { soundEnabled: true, reducedMotion: false, gameplayTips: true },
+    settings: { soundEnabled: false, reducedMotion: false, gameplayTips: true },
   };
 }
 
