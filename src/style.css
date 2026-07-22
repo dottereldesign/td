@@ -140,6 +140,10 @@ button:disabled {
 #terrain-canvas {
   z-index: 0;
   pointer-events: none;
+  background-color: #addb41;
+  background-image: url('./assets/terrain/ground/grass.webp');
+  background-repeat: repeat;
+  background-size: min(26rem, 100vw) auto;
 }
 
 #game-canvas {

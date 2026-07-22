@@ -33,7 +33,7 @@ def main() -> None:
         (args.output / folder).mkdir(parents=True, exist_ok=True)
 
     for name in ICON_NAMES:
-        prepare_sprite(args.alpha / f"{name}.png", args.output / "icons" / f"{name}.png")
+        prepare_sprite(args.alpha / f"{name}.png", args.output / "icons" / f"{name}.webp")
 
     prepare_webp(args.source / "home-background.png", args.output / "background" / "learning-fortress.webp", (1536, 1024), 88)
     prepare_webp(args.source / "summer-event.png", args.output / "panels" / "summer-event.webp", (768, 512), 88)

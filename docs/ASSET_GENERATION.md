@@ -74,8 +74,8 @@ python scripts/split_terrain_path_tiles.py
 ```
 
 Runtime path filenames begin with the numeric `N=1, E=2, S=4, W=8` bitmask and
-include a readable orientation, such as `10-straight-horizontal.png` and
-`15-junction-four-way.png`. Mask zero is emitted as a real isolated dirt island.
+include a readable orientation, such as `10-straight-horizontal.webp` and
+`15-junction-four-way.webp`. Mask zero is emitted as a real isolated dirt island.
 
 After chroma-removing the five home-screen icons, rebuild all home runtime art
 with `python scripts/process_home_assets.py`.

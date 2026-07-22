@@ -82,8 +82,8 @@ def main() -> None:
     four_way = extract_core(atlas, 15)
     for mask, name in TILE_NAMES.items():
         tile = make_isolated_tile(four_way) if mask == 0 else extract_core(atlas, mask)
-        destination = args.output / f"{mask:02d}-{name}.png"
-        tile.save(destination, "PNG", optimize=True)
+        destination = args.output / f"{mask:02d}-{name}.webp"
+        tile.save(destination, "WEBP", lossless=True, method=6)
         print(destination.relative_to(root))
 
 

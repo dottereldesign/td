@@ -20,12 +20,12 @@ MATERIALS = {
 }
 
 TOWER_SPRITES = {
-    "mycelium-network.png": "mycelium-network.png",
-    "pollinator-post.png": "pollinator-post.png",
-    "canopy-guardian.png": "canopy-guardian.png",
-    "root-snare.png": "root-snare.png",
-    "seed-slinger.png": "seed-slinger.png",
-    "weathered-oak.png": "weathered-oak.png",
+    "mycelium-network.png": "mycelium-network.webp",
+    "pollinator-post.png": "pollinator-post.webp",
+    "canopy-guardian.png": "canopy-guardian.webp",
+    "root-snare.png": "root-snare.webp",
+    "seed-slinger.png": "seed-slinger.webp",
+    "weathered-oak.png": "weathered-oak.webp",
 }
 
 
@@ -61,7 +61,10 @@ def prepare_sprite(source: Path, destination: Path) -> None:
             ((square_side - sprite.width) // 2, (square_side - sprite.height) // 2),
         )
         square = square.resize((384, 384), Image.Resampling.LANCZOS)
-        square.save(destination, "PNG", optimize=True)
+        if destination.suffix.lower() == ".webp":
+            square.save(destination, "WEBP", lossless=True, method=6)
+        else:
+            square.save(destination, "PNG", optimize=True)
 
 
 def main() -> None:
@@ -93,7 +96,7 @@ def main() -> None:
         prepare_texture(args.source / source_name, args.materials_output / output_name)
     for source_name, output_name in TOWER_SPRITES.items():
         prepare_sprite(args.alpha / source_name, args.tower_output / output_name)
-    prepare_sprite(args.alpha / "terrain-rock-fern.png", args.prop_output / "rock-fern.png")
+    prepare_sprite(args.alpha / "terrain-rock-fern.png", args.prop_output / "rock-fern.webp")
 
 
 if __name__ == "__main__":

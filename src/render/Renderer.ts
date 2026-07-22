@@ -52,7 +52,10 @@ export class Renderer {
     const context = canvas.getContext('2d', { alpha: true, desynchronized: true });
     if (!context) throw new Error('Canvas 2D is not supported in this browser.');
     if (!terrainCanvas) throw new Error('Missing terrain canvas.');
-    const terrainContext = terrainCanvas.getContext('2d', { alpha: false });
+    // Keep this layer transparent until its first paint. Some mobile browsers
+    // reset canvas backing stores during viewport/safe-area changes; an opaque
+    // canvas exposes that reset as a persistent black rectangle.
+    const terrainContext = terrainCanvas.getContext('2d', { alpha: true });
     if (!terrainContext) throw new Error('Canvas 2D terrain layer is not supported in this browser.');
     this.context = context;
     this.dynamicContext = context;
@@ -258,7 +261,16 @@ export class Renderer {
     const pattern = this.context.createPattern(image, 'repeat');
     if (!pattern) return null;
     const scale = targetSize / image.naturalWidth;
-    pattern.setTransform(new DOMMatrix().translate(offsetX, offsetY).scale(scale));
+    // Older mobile WebViews can create patterns but do not implement the
+    // transform API reliably. The untransformed pattern is still a safe,
+    // visible terrain texture.
+    if (typeof pattern.setTransform === 'function' && typeof DOMMatrix !== 'undefined') {
+      try {
+        pattern.setTransform(new DOMMatrix().translate(offsetX, offsetY).scale(scale));
+      } catch {
+        // Keep the browser-native pattern when transforms are unavailable.
+      }
+    }
     return pattern;
   }
 

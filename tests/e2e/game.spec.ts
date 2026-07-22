@@ -72,6 +72,37 @@ test('keeps core controls usable on a phone viewport', async ({ page }) => {
   await expect(page.getByRole('button', { name: /Pollinator Post/i })).toBeVisible();
   await expect(page.getByRole('button', { name: /Send wave 01/i })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+
+  await expect.poll(async () => page.locator('#terrain-canvas').evaluate((canvas: HTMLCanvasElement) => {
+    const context = canvas.getContext('2d');
+    if (!context || canvas.width === 0 || canvas.height === 0) return 0;
+    const sample = context.getImageData(
+      Math.floor(canvas.width / 2),
+      Math.floor(canvas.height / 2),
+      1,
+      1,
+    ).data;
+    return sample[0] + sample[1] + sample[2];
+  })).toBeGreaterThan(30);
+
+  const terrainFallback = await page.locator('#terrain-canvas').evaluate((canvas: HTMLCanvasElement) => {
+    const style = getComputedStyle(canvas);
+    return {
+      alpha: canvas.getContext('2d')?.getContextAttributes()?.alpha,
+      backgroundColor: style.backgroundColor,
+      backgroundImage: style.backgroundImage,
+    };
+  });
+  expect(terrainFallback.alpha).toBe(true);
+  expect(terrainFallback.backgroundColor).not.toBe('rgb(0, 0, 0)');
+  expect(terrainFallback.backgroundImage).toContain('grass.webp');
+
+  const rasterRequests = await page.evaluate(() => performance
+    .getEntriesByType('resource')
+    .map((entry) => entry.name)
+    .filter((url) => /\/src\/assets\/.*\.(?:png|jpe?g|webp)(?:\?|$)/i.test(url)));
+  expect(rasterRequests.length).toBeGreaterThan(0);
+  expect(rasterRequests.every((url) => /\.webp(?:\?|$)/i.test(url))).toBe(true);
   if (process.env.CAPTURE_VISUAL) {
     await page.waitForTimeout(400);
     await page.screenshot({ path: 'test-results/mono-ward-mobile.png', fullPage: true });
