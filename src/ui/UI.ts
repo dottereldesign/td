@@ -1,4 +1,5 @@
 import { ARMOR_CODES, ARMOR_LABELS, LEVELS, TOWER_ORDER, WORLDS, getTowerDefinition, getWorld } from '../data';
+import type { AudioChannels } from '../audio';
 import { DAMAGE_MATRIX, matchupLabel } from '../game/damage';
 import { Game } from '../game/Game';
 import { HOME_WORLD_ART } from '../homeAssets';
@@ -74,6 +75,7 @@ export class UI {
     private readonly game: Game,
     private readonly onLevelReset: () => void,
     private readonly onSoundToggle: () => boolean,
+    private readonly onAudioSettingsChange: (channels: AudioChannels) => void,
     initialMuted: boolean,
     private readonly profiler?: PerformanceMonitor,
   ) {
@@ -81,9 +83,7 @@ export class UI {
     this.selectedWorldId = game.level.worldId;
     this.progress = loadPlayerProgress();
     this.soundMuted = initialMuted;
-    // The dedicated audio preference is authoritative so older guest profiles
-    // that inherited the former sound-on default still begin safely muted.
-    this.progress.settings.soundEnabled = !this.soundMuted;
+    this.applyAudioSettings();
     this.applySettings();
     this.renderTowerShop();
     this.renderWorldGrid();
@@ -309,8 +309,6 @@ export class UI {
     this.button('help-close-button').addEventListener('click', () => this.toggleHelp(false));
     this.button('sound-button').addEventListener('click', () => {
       this.soundMuted = this.onSoundToggle();
-      this.progress.settings.soundEnabled = !this.soundMuted;
-      this.persistProgress();
       this.updateSoundButton(this.soundMuted);
     });
     this.button('home-panel-close').addEventListener('click', () => this.homePanelModal.classList.remove('is-open'));
@@ -722,7 +720,8 @@ export class UI {
       <label class="setting-row"><span><strong>${title}</strong><small>${copy}</small></span><input type="checkbox" data-setting="${id}" ${checked ? 'checked' : ''}></label>`;
     return `
       <div class="settings-list">
-        ${setting('soundEnabled', 'Music & sound', 'Magical background music, battle cues, rewards, and interface sounds.', this.progress.settings.soundEnabled)}
+        ${setting('musicEnabled', 'Background music', 'The seamless magical soundtrack across every game screen.', this.progress.settings.musicEnabled)}
+        ${setting('effectsEnabled', 'Game sounds', 'Button clicks, cards, towers, battle cues, and reward sounds.', this.progress.settings.effectsEnabled)}
         ${setting('reducedMotion', 'Reduce motion', 'Minimize flips, transitions, and animated effects.', this.progress.settings.reducedMotion)}
         ${setting('gameplayTips', 'Gameplay tips', 'Show contextual guidance over the battlefield.', this.progress.settings.gameplayTips)}
       </div>
@@ -807,7 +806,7 @@ export class UI {
     this.progress = createDefaultProgress();
     localStorage.removeItem('snack-squad-player-v1');
     localStorage.removeItem('mono-ward-progress');
-    this.syncSoundToSetting();
+    this.applyAudioSettings();
     this.applySettings();
     this.persistProgress();
     this.renderLevelGrid();
@@ -822,14 +821,16 @@ export class UI {
     if (!input?.dataset.setting) return;
     const setting = input.dataset.setting as keyof PlayerProgress['settings'];
     this.progress.settings[setting] = input.checked;
-    if (setting === 'soundEnabled') this.syncSoundToSetting();
+    if (setting === 'musicEnabled' || setting === 'effectsEnabled') this.applyAudioSettings();
     this.applySettings();
     this.persistProgress();
   }
 
-  private syncSoundToSetting(): void {
-    if (this.progress.settings.soundEnabled === this.soundMuted) this.soundMuted = this.onSoundToggle();
-    this.updateSoundButton(this.soundMuted);
+  private applyAudioSettings(): void {
+    this.onAudioSettingsChange({
+      musicEnabled: this.progress.settings.musicEnabled,
+      effectsEnabled: this.progress.settings.effectsEnabled,
+    });
   }
 
   private applySettings(): void {

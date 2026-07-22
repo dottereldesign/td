@@ -1,7 +1,8 @@
 export const PLAYER_PROGRESS_KEY = 'wizino-td-player-v1';
 
 export interface PlayerSettings {
-  soundEnabled: boolean;
+  musicEnabled: boolean;
+  effectsEnabled: boolean;
   reducedMotion: boolean;
   gameplayTips: boolean;
 }
@@ -89,7 +90,7 @@ export function createDefaultProgress(): PlayerProgress {
     lastVictoryDate: null,
     lastDailyClaim: null,
     claimedMissions: [],
-    settings: { soundEnabled: false, reducedMotion: false, gameplayTips: true },
+    settings: { musicEnabled: true, effectsEnabled: true, reducedMotion: false, gameplayTips: true },
   };
 }
 
@@ -220,6 +221,7 @@ function localDateKey(date: Date): string {
 }
 
 function normalizeProgress(value: Partial<PlayerProgress>, defaults: PlayerProgress): PlayerProgress {
+  const incomingSettings = value.settings as Partial<PlayerSettings> | undefined;
   return {
     ...defaults,
     ...value,
@@ -235,7 +237,12 @@ function normalizeProgress(value: Partial<PlayerProgress>, defaults: PlayerProgr
     highScores: objectRecord(value.highScores),
     leaderboard: Array.isArray(value.leaderboard) ? value.leaderboard.slice(0, 10) : [],
     claimedMissions: Array.isArray(value.claimedMissions) ? value.claimedMissions : [],
-    settings: { ...defaults.settings, ...(value.settings ?? {}) },
+    settings: {
+      musicEnabled: incomingSettings?.musicEnabled ?? defaults.settings.musicEnabled,
+      effectsEnabled: incomingSettings?.effectsEnabled ?? defaults.settings.effectsEnabled,
+      reducedMotion: incomingSettings?.reducedMotion ?? defaults.settings.reducedMotion,
+      gameplayTips: incomingSettings?.gameplayTips ?? defaults.settings.gameplayTips,
+    },
   };
 }
 

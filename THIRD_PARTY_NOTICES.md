@@ -40,4 +40,14 @@ Wizino TD's terrain, route, towers, circular enemies, armor marks, projectiles, 
   reverb tail folded under the opening for a gapless loop and normalized to
   provide safe peak headroom.
 
+## Kenney Interface Sounds
+
+- Author: Kenney
+- Use: Button, card, navigation, toggle, confirmation, and tower interaction sounds
+- License: CC0 1.0 Universal (public-domain dedication)
+- Source: <https://opengameart.org/content/interface-sounds>
+- Bundled files: Seven selected and semantically renamed OGG effects under
+  [public/audio/ui](public/audio/ui)
+- License copy: [public/licenses/KENNEY-INTERFACE-SOUNDS.txt](public/licenses/KENNEY-INTERFACE-SOUNDS.txt)
+
 Font packages are delivered by [Fontsource](https://fontsource.org/).

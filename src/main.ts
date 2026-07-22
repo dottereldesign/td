@@ -8,7 +8,7 @@ import '@fontsource/ibm-plex-mono/latin-500.css';
 import '@fontsource/ibm-plex-mono/latin-600.css';
 import '@fontsource/ibm-plex-mono/latin-700.css';
 import './style.css';
-import { AudioEngine } from './audio';
+import { AudioEngine, type UiSound } from './audio';
 import { TOWER_ORDER } from './data';
 import { Game } from './game/Game';
 import { PerformanceMonitor } from './performance/PerformanceMonitor';
@@ -42,6 +42,7 @@ const ui = new UI(
     renderer.draw(performance.now());
   },
   () => audio.toggle(),
+  (channels) => audio.configure(channels),
   audio.muted,
   performanceMonitor,
 );
@@ -62,6 +63,7 @@ canvas.addEventListener('pointerleave', () => game.setHoverCell(null));
 canvas.addEventListener('pointerdown', (event) => {
   if (event.button !== 0) return;
   audio.unlock();
+  audio.playUi(game.selectedBuild ? 'tower' : 'card');
   const cell = renderer.cellFromPointer(event.clientX, event.clientY);
   game.setHoverCell(cell);
   if (game.selectedBuild) game.placeTower(cell, event.shiftKey);
@@ -76,6 +78,30 @@ canvas.addEventListener('contextmenu', (event) => {
 });
 
 document.addEventListener('pointerdown', () => audio.unlock(), { once: true });
+
+document.addEventListener('pointerdown', (event) => {
+  const target = event.target as HTMLElement;
+  const mutingMaster = target.closest('#sound-button[aria-pressed="true"]');
+  const disablingEffects = target.closest('input[data-setting="effectsEnabled"]:checked');
+  if (mutingMaster || disablingEffects) audio.playUi('toggle');
+});
+
+document.addEventListener('click', (event) => {
+  const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button');
+  if (!button || button.disabled) return;
+  let sound: UiSound = 'click';
+  if (button.matches('.tower-card')) sound = 'tower';
+  else if (button.matches('.home-world, .world-card, .level-card, .learning-card')) sound = 'card';
+  else if (button.matches('.home-play, #home-adventure-button, #wave-button, #deploy-button, #upgrade-button, #outcome-retry, [data-claim-daily], [data-claim-mission]')) sound = 'confirm';
+  else if (button.matches('#sound-button')) sound = 'toggle';
+  else if (button.matches('.modal-close, #selection-home-button, #world-back-button, #outcome-levels')) sound = 'back';
+  else if (button.matches('[data-home-panel], #level-menu-button, #help-button')) sound = 'open';
+  audio.playUi(sound);
+});
+
+document.addEventListener('change', (event) => {
+  if ((event.target as HTMLElement).matches('input[type="checkbox"]')) audio.playUi('toggle');
+});
 
 document.addEventListener('keydown', (event) => {
   if (event.repeat && event.key !== 'Escape') return;
@@ -175,8 +201,9 @@ declare global {
       ui: UI;
       renderer: Renderer;
       profiler: PerformanceMonitor;
+      audio: AudioEngine;
     };
   }
 }
 
-window.__WIZINO_TD__ = { game, ui, renderer, profiler: performanceMonitor };
+window.__WIZINO_TD__ = { game, ui, renderer, profiler: performanceMonitor, audio };

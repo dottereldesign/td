@@ -36,6 +36,17 @@ describe('local guest progression', () => {
     expect(player.bestWave).toBe(0);
     expect(player.streak).toBe(0);
     expect(player.leaderboard).toEqual([]);
+    expect(player.settings.musicEnabled).toBe(true);
+    expect(player.settings.effectsEnabled).toBe(true);
+  });
+
+  it('keeps both new channels enabled when loading the previous combined setting', () => {
+    const storage = {
+      getItem: () => JSON.stringify({ settings: { soundEnabled: false } }),
+    };
+    const player = loadPlayerProgress(storage);
+    expect(player.settings.musicEnabled).toBe(true);
+    expect(player.settings.effectsEnabled).toBe(true);
   });
 
   it('persists the versioned guest record in browser-like storage', () => {

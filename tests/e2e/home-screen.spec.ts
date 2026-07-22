@@ -97,14 +97,20 @@ test('persists guest settings and daily rewards in local browser storage', async
   const panel = page.locator('#home-panel-modal');
   await expect(panel).toBeVisible();
   await expect(panel.getByRole('heading', { name: 'Settings' })).toBeVisible();
-  await expect(panel.locator('[data-setting]')).toHaveCount(3);
+  await expect(panel.locator('[data-setting]')).toHaveCount(4);
+  await expect(panel.locator('[data-setting="musicEnabled"]')).toBeChecked();
+  await expect(panel.locator('[data-setting="effectsEnabled"]')).toBeChecked();
   if (process.env.CAPTURE_HOME) await page.screenshot({ path: 'tmp/settings-panel-qa.png', fullPage: true });
+  await panel.getByText('Game sounds').click();
+  await expect(panel.locator('[data-setting="effectsEnabled"]')).not.toBeChecked();
   await panel.getByText('Gameplay tips').click();
   await expect(panel.locator('[data-setting="gameplayTips"]')).not.toBeChecked();
   await panel.getByRole('button', { name: 'Close' }).click();
 
   await page.reload();
   await page.getByRole('button', { name: 'Settings' }).click();
+  await expect(panel.locator('[data-setting="effectsEnabled"]')).not.toBeChecked();
+  expect(await page.evaluate(() => window.__WIZINO_TD__.audio.getDiagnostics().effectsEnabled)).toBe(false);
   await expect(panel.locator('[data-setting="gameplayTips"]')).not.toBeChecked();
   await panel.getByRole('button', { name: 'Close' }).click();
 
@@ -138,6 +144,7 @@ test('keeps the lightweight music loop muted until the player enables it', async
   await toggle.click();
   await expect(page.getByRole('button', { name: 'Mute sound' })).toHaveAttribute('aria-pressed', 'true');
   await expect.poll(() => music.evaluate((audio: HTMLAudioElement) => audio.paused)).toBe(false);
+  await expect.poll(() => page.evaluate(() => window.__WIZINO_TD__.audio.getDiagnostics().loadedEffects)).toBe(7);
   const loopDuration = await music.evaluate((audio: HTMLAudioElement) => audio.duration);
   expect(loopDuration).toBeGreaterThan(15.1);
   expect(loopDuration).toBeLessThan(15.2);
@@ -147,10 +154,16 @@ test('keeps the lightweight music loop muted until the player enables it', async
   await page.getByRole('button', { name: 'Start adventure' }).click();
   await expect(page.getByRole('button', { name: 'Mute sound' })).toBeVisible();
   await expect.poll(() => music.evaluate((audio: HTMLAudioElement) => audio.paused)).toBe(false);
+  await expect.poll(() => page.evaluate(() => window.__WIZINO_TD__.audio.getDiagnostics().lastEffect)).toBe('confirm');
+  await page.getByRole('button', { name: /Forest World/i }).click();
+  await expect.poll(() => page.evaluate(() => window.__WIZINO_TD__.audio.getDiagnostics().lastEffect)).toBe('card');
 
   await page.getByRole('button', { name: 'Mute sound' }).click();
   await expect(page.getByRole('button', { name: 'Enable sound' })).toHaveAttribute('aria-pressed', 'false');
   expect(await music.evaluate((audio: HTMLAudioElement) => audio.paused)).toBe(true);
+  const playsWhileMuted = await page.evaluate(() => window.__WIZINO_TD__.audio.getDiagnostics().effectPlays);
+  await page.locator('[data-level]').first().click();
+  expect(await page.evaluate(() => window.__WIZINO_TD__.audio.getDiagnostics().effectPlays)).toBe(playsWhileMuted);
 });
 
 test('opens functional mission, achievement, collection, and leaderboard panels', async ({ page }) => {
