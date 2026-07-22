@@ -27,6 +27,7 @@ test('renders the illustrated home dashboard and opens a world', async ({ page }
     return {
       allImagesLoaded: images.every((image) => image.complete && image.naturalWidth >= 100),
       allButtonsUsePointerCursor: buttons.every((button) => getComputedStyle(button).cursor === 'pointer'),
+      allButtonsAnimate: buttons.every((button) => getComputedStyle(button).transitionDuration !== '0s'),
       horizontalOverflow: element.scrollWidth - element.clientWidth,
       footerBottom: footer.getBoundingClientRect().bottom,
       heroCenterDelta: Math.abs(
@@ -41,6 +42,7 @@ test('renders the illustrated home dashboard and opens a world', async ({ page }
 
   expect(layout.allImagesLoaded).toBe(true);
   expect(layout.allButtonsUsePointerCursor).toBe(true);
+  expect(layout.allButtonsAnimate).toBe(true);
   expect(layout.horizontalOverflow).toBeLessThanOrEqual(1);
   expect(layout.footerBottom).toBeLessThanOrEqual(1008);
   expect(layout.heroCenterDelta).toBeLessThanOrEqual(1);
