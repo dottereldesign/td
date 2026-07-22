@@ -9,6 +9,7 @@ src/assets/terrain/ground/       seamless runtime ground textures
 src/assets/terrain/paths/dirt/   individual connection-mask tiles
 src/assets/terrain/props/        transparent scenery sprites
 src/assets/towers/worlds/        shared shop/battlefield cutouts by world
+src/assets/home/                 home background, icons, panels, and world cards
 art/reference/                   supplied visual references
 art/source-materials/            processed materials not currently bundled
 art/source-sheets/               combined authoring sheets, not bundled
@@ -42,6 +43,10 @@ The complete Forest prompt set and current generation status live in
 `art/source-images/towers/forest/PROMPTS.md`. Retired household-tower prompts and
 art are historical references only and must not be restored to runtime folders.
 
+The complete home-screen prompt set lives in
+`art/source-images/home/PROMPTS.md`. Its generated labels and borders are kept
+out of raster art so they remain responsive and editable in HTML/CSS.
+
 ## Processing workflow
 
 Convert chroma-key source images to transparent RGBA first, then run:
@@ -71,3 +76,6 @@ python scripts/split_terrain_path_tiles.py
 Runtime path filenames begin with the numeric `N=1, E=2, S=4, W=8` bitmask and
 include a readable orientation, such as `10-straight-horizontal.png` and
 `15-junction-four-way.png`. Mask zero is emitted as a real isolated dirt island.
+
+After chroma-removing the five home-screen icons, rebuild all home runtime art
+with `python scripts/process_home_assets.py`.

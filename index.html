@@ -13,25 +13,63 @@
   </head>
   <body>
     <section class="home-screen is-open" id="home-screen" aria-labelledby="home-title">
-      <div class="home-orbit home-orbit--one" aria-hidden="true"></div>
-      <div class="home-orbit home-orbit--two" aria-hidden="true"></div>
-      <div class="home-card">
-        <div class="home-badge" aria-hidden="true"><i data-lucide="sprout"></i></div>
-        <span class="eyebrow">A LEARNING TOWER DEFENCE ADVENTURE</span>
-        <h1 id="home-title">MONO<span>//</span>WARD</h1>
-        <p>Build clever defences, discover how the world works, and protect six realms one lesson at a time.</p>
-        <div class="home-progress">
-          <span><i data-lucide="star" aria-hidden="true"></i><strong id="home-star-total">0</strong> / 54 stars</span>
-          <span>18 maps · 6 worlds</span>
-        </div>
-        <button class="button button--primary button--hero" id="home-play-button" type="button">
-          Start adventure <i data-lucide="arrow-right" aria-hidden="true"></i>
-        </button>
-        <div class="home-pillars" aria-label="Game features">
-          <div><i data-lucide="brain" aria-hidden="true"></i><span><strong>Learn</strong><small>Discover ideas through play</small></span></div>
-          <div><i data-lucide="shield" aria-hidden="true"></i><span><strong>Build</strong><small>Combine six tower roles</small></span></div>
-          <div><i data-lucide="star" aria-hidden="true"></i><span><strong>Master</strong><small>Earn three stars per map</small></span></div>
-        </div>
+      <div class="home-vignette" aria-hidden="true"></div>
+      <div class="home-shell">
+        <header class="home-topbar">
+          <button class="home-profile glass-panel" type="button" data-home-message="Player profiles are ready for the next progression update.">
+            <span class="home-avatar"><img src="/src/assets/home/icons/profile-avatar.png" alt="" /></span>
+            <span class="home-profile-copy"><strong>SnackHero</strong><span><i data-lucide="star" aria-hidden="true"></i> Level 25</span><span class="home-xp"><i style="--xp: 68%"></i></span></span>
+          </button>
+          <div class="home-resources" aria-label="Player resources">
+            <button class="resource-chip resource-chip--energy" type="button" data-home-message="Energy recharges while you learn."><i data-lucide="zap" aria-hidden="true"></i><strong>78/100</strong><span>+</span></button>
+            <button class="resource-chip resource-chip--coins" type="button" data-home-message="Coins are earned by clearing waves and missions."><i data-lucide="coins" aria-hidden="true"></i><strong>12,450</strong><span>+</span></button>
+            <button class="resource-chip resource-chip--gems" type="button" data-home-message="Gems unlock special squad upgrades."><i data-lucide="gem" aria-hidden="true"></i><strong>985</strong><span>+</span></button>
+            <button class="home-settings" id="home-settings-button" type="button" aria-label="Settings" data-home-message="Settings will be available in the next update."><i data-lucide="settings" aria-hidden="true"></i></button>
+          </div>
+        </header>
+
+        <main class="home-stage">
+          <nav class="home-quick-actions" aria-label="Player activities">
+            <button class="home-quick-button" type="button" data-home-message="Three new missions are waiting for you."><img src="/src/assets/home/icons/missions.png" alt="" /><strong>Missions</strong><b>3</b></button>
+            <button class="home-quick-button" type="button" data-home-message="Your daily reward is ready to collect."><img src="/src/assets/home/icons/daily-rewards.png" alt="" /><strong>Daily rewards</strong></button>
+            <button class="home-quick-button" type="button" data-home-message="Seven achievements are close to completion."><img src="/src/assets/home/icons/achievements.png" alt="" /><strong>Achievements</strong><b>7</b></button>
+            <button class="home-quick-button" type="button" data-home-message="Your defender collection spans all six learning worlds."><img src="/src/assets/home/icons/collection.png" alt="" /><strong>Collection</strong></button>
+          </nav>
+
+          <section class="home-hero" aria-label="Snack Squad">
+            <h1 id="home-title" aria-label="Snack Squad"><span>Snack</span><span>Squad</span></h1>
+            <p>Defend the fridge. Learn the world!</p>
+            <button class="home-play" id="home-play-button" type="button" aria-label="Start adventure">Play</button>
+            <div class="home-modes" aria-label="Game modes">
+              <button id="home-adventure-button" type="button"><i data-lucide="map" aria-hidden="true"></i> Adventure mode</button>
+              <button type="button" data-home-message="Endless mode is coming soon."><i data-lucide="skull" aria-hidden="true"></i> Endless mode</button>
+            </div>
+          </section>
+
+          <aside class="home-feature-cards">
+            <button class="home-event-card" type="button" data-home-message="The Mold Invasion summer event is coming soon."><img src="/src/assets/home/panels/summer-event.webp" alt="" /><span><strong>Summer event!</strong><small>Mold invasion</small><b>Double rewards</b></span></button>
+            <button class="home-squad-card" type="button" data-home-message="Squad editing is coming soon."><img src="/src/assets/home/panels/squad.webp" alt="" /><span><small><i data-lucide="shield" aria-hidden="true"></i> Squad power</small><strong>12,580</strong><b>Edit squad</b></span></button>
+          </aside>
+        </main>
+
+        <div class="home-world-heading"><span>Explore &amp; learn worlds!</span><small><strong id="home-star-total">0</strong> / 54 stars earned</small></div>
+        <section class="home-world-grid" aria-label="Learning worlds">
+          <button class="home-world home-world--forest" type="button" data-home-world="forest"><img src="/src/assets/home/worlds/forest.webp" alt="" /><span><strong>Forest World</strong><small>Ecosystems &amp; nature</small><b><i data-lucide="star" aria-hidden="true"></i><em data-home-stars="forest">0</em>/9</b></span></button>
+          <button class="home-world home-world--workshop" type="button" data-home-world="workshop"><img src="/src/assets/home/worlds/workshop.webp" alt="" /><span><strong>Workshop World</strong><small>Machines &amp; cause-effect</small><b><i data-lucide="star" aria-hidden="true"></i><em data-home-stars="workshop">0</em>/9</b></span></button>
+          <button class="home-world home-world--word" type="button" data-home-world="word"><img src="/src/assets/home/worlds/word.webp" alt="" /><span><strong>Word World</strong><small>Literacy &amp; language</small><b><i data-lucide="star" aria-hidden="true"></i><em data-home-stars="word">0</em>/9</b></span></button>
+          <button class="home-world home-world--number" type="button" data-home-world="number"><img src="/src/assets/home/worlds/number.webp" alt="" /><span><strong>Number World</strong><small>Patterns, counting &amp; logic</small><b><i data-lucide="star" aria-hidden="true"></i><em data-home-stars="number">0</em>/9</b></span></button>
+          <button class="home-world home-world--space" type="button" data-home-world="space"><img src="/src/assets/home/worlds/space.webp" alt="" /><span><strong>Space World</strong><small>Planets, gravity &amp; science</small><b><i data-lucide="star" aria-hidden="true"></i><em data-home-stars="space">0</em>/9</b></span></button>
+          <button class="home-world home-world--music" type="button" data-home-world="music"><img src="/src/assets/home/worlds/music.webp" alt="" /><span><strong>Music World</strong><small>Rhythm &amp; sequencing</small><b><i data-lucide="star" aria-hidden="true"></i><em data-home-stars="music">0</em>/9</b></span></button>
+        </section>
+
+        <footer class="home-footer">
+          <button type="button" data-home-message="Keep learning every day to grow your streak."><i data-lucide="flame" aria-hidden="true"></i><span><small>Streak</small><strong>7 days</strong></span></button>
+          <button type="button" data-home-message="Your best run reached wave 128."><i data-lucide="skull" aria-hidden="true"></i><span><small>Best wave</small><strong>128</strong></span></button>
+          <button type="button" data-home-message="Leaderboards are coming soon."><i data-lucide="trophy" aria-hidden="true"></i><strong>Leaderboards</strong></button>
+          <button type="button" data-home-message="The Parents Learning Hub is coming soon."><i data-lucide="users" aria-hidden="true"></i><span><strong>Parents</strong><small>Learning hub</small></span></button>
+          <button class="home-premium" type="button" data-home-message="Premium rewards are coming soon."><i data-lucide="crown" aria-hidden="true"></i><span><strong>Get premium!</strong><small>Extra rewards · no ads</small></span></button>
+        </footer>
+        <div class="home-status" id="home-status" role="status" aria-live="polite"></div>
       </div>
     </section>
 

@@ -50,6 +50,7 @@ export class UI {
   private readonly levelGrid = this.element('level-grid');
   private readonly worldGrid = this.element('world-grid');
   private readonly homeScreen = this.element('home-screen');
+  private readonly homeStatus = this.element('home-status');
   private readonly deployButton = this.button('deploy-button');
   private readonly toastRegion = this.element('toast-region');
 
@@ -196,11 +197,30 @@ export class UI {
   }
 
   private bindControls(): void {
-    this.button('home-play-button').addEventListener('click', () => {
+    const openAdventure = () => {
       this.homeScreen.classList.remove('is-open');
       this.levelModalOpenedFromGame = false;
       this.showWorldSelect();
       this.levelModal.classList.add('is-open');
+    };
+    this.button('home-play-button').addEventListener('click', openAdventure);
+    this.button('home-adventure-button').addEventListener('click', openAdventure);
+    this.homeScreen.addEventListener('click', (event) => {
+      const worldButton = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-home-world]');
+      if (worldButton?.dataset.homeWorld) {
+        this.homeScreen.classList.remove('is-open');
+        this.levelModalOpenedFromGame = false;
+        this.showMapSelect(worldButton.dataset.homeWorld as WorldId);
+        this.levelModal.classList.add('is-open');
+        return;
+      }
+
+      const messageButton = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-home-message]');
+      if (!messageButton?.dataset.homeMessage) return;
+      this.homeStatus.textContent = messageButton.dataset.homeMessage;
+      this.homeStatus.classList.remove('is-visible');
+      window.requestAnimationFrame(() => this.homeStatus.classList.add('is-visible'));
+      window.setTimeout(() => this.homeStatus.classList.remove('is-visible'), 2_400);
     });
     this.towerShop.addEventListener('click', (event) => {
       const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-tower]');
@@ -559,6 +579,11 @@ export class UI {
   private updateHomeProgress(): void {
     const total = Object.values(this.progress.stars).reduce((sum, stars) => sum + stars, 0);
     this.element('home-star-total').textContent = String(total);
+    for (const world of WORLDS) {
+      const worldTotal = world.mapIds.reduce((sum, levelId) => sum + (this.progress.stars[levelId] ?? 0), 0);
+      const target = this.homeScreen.querySelector<HTMLElement>(`[data-home-stars="${world.id}"]`);
+      if (target) target.textContent = String(worldTotal);
+    }
   }
 
   private intelArmor(): ArmorType {

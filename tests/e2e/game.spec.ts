@@ -21,9 +21,9 @@ test('deploys a tower and starts a wave', async ({ page }) => {
   const pageErrors: string[] = [];
   page.on('pageerror', (error) => pageErrors.push(error.message));
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: /MONO.*WARD/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Snack Squad/i })).toBeVisible();
   if (process.env.CAPTURE_VISUAL) {
-    await page.screenshot({ path: 'test-results/mono-ward-level-select.png', fullPage: true });
+    await page.screenshot({ path: 'test-results/snack-squad-home.png', fullPage: true });
   }
   await enterForest(page);
 
