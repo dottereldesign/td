@@ -20,6 +20,11 @@ test('renders the illustrated home dashboard and opens a world', async ({ page }
       allButtonsUsePointerCursor: buttons.every((button) => getComputedStyle(button).cursor === 'pointer'),
       horizontalOverflow: element.scrollWidth - element.clientWidth,
       footerBottom: footer.getBoundingClientRect().bottom,
+      heroCenterDelta: Math.abs(
+        element.querySelector<HTMLElement>('.home-hero')!.getBoundingClientRect().left
+          + element.querySelector<HTMLElement>('.home-hero')!.getBoundingClientRect().width / 2
+          - (element.getBoundingClientRect().left + element.getBoundingClientRect().width / 2),
+      ),
     };
   });
 
@@ -27,6 +32,7 @@ test('renders the illustrated home dashboard and opens a world', async ({ page }
   expect(layout.allButtonsUsePointerCursor).toBe(true);
   expect(layout.horizontalOverflow).toBeLessThanOrEqual(1);
   expect(layout.footerBottom).toBeLessThanOrEqual(1008);
+  expect(layout.heroCenterDelta).toBeLessThanOrEqual(1);
 
   const quickActions = await home.locator('.home-quick-button').evaluateAll((buttons) => buttons.map((button) => {
     const buttonRect = button.getBoundingClientRect();
