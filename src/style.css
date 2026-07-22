@@ -1445,6 +1445,7 @@ button:disabled {
 .home-screen button {
   font-family: var(--round);
   color: white;
+  cursor: pointer;
 }
 
 .home-topbar { display: grid; grid-template-columns: minmax(250px, 1fr) auto; align-items: start; gap: 18px; }

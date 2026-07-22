@@ -13,15 +13,18 @@ test('renders the illustrated home dashboard and opens a world', async ({ page }
 
   const layout = await home.evaluate((element) => {
     const images = [...element.querySelectorAll<HTMLImageElement>('img')];
+    const buttons = [...element.querySelectorAll<HTMLButtonElement>('button')];
     const footer = element.querySelector<HTMLElement>('.home-footer')!;
     return {
       allImagesLoaded: images.every((image) => image.complete && image.naturalWidth >= 100),
+      allButtonsUsePointerCursor: buttons.every((button) => getComputedStyle(button).cursor === 'pointer'),
       horizontalOverflow: element.scrollWidth - element.clientWidth,
       footerBottom: footer.getBoundingClientRect().bottom,
     };
   });
 
   expect(layout.allImagesLoaded).toBe(true);
+  expect(layout.allButtonsUsePointerCursor).toBe(true);
   expect(layout.horizontalOverflow).toBeLessThanOrEqual(1);
   expect(layout.footerBottom).toBeLessThanOrEqual(1008);
 
