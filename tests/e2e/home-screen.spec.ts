@@ -138,6 +138,9 @@ test('keeps the lightweight music loop muted until the player enables it', async
   await toggle.click();
   await expect(page.getByRole('button', { name: 'Mute sound' })).toHaveAttribute('aria-pressed', 'true');
   await expect.poll(() => music.evaluate((audio: HTMLAudioElement) => audio.paused)).toBe(false);
+  const loopDuration = await music.evaluate((audio: HTMLAudioElement) => audio.duration);
+  expect(loopDuration).toBeGreaterThan(15.1);
+  expect(loopDuration).toBeLessThan(15.2);
 
   await page.reload();
   await expect(page.getByRole('button', { name: 'Mute sound' })).toHaveAttribute('aria-pressed', 'true');

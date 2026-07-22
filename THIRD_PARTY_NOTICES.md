@@ -36,5 +36,8 @@ Wizino TD's terrain, route, towers, circular enemies, armor marks, projectiles, 
 - License: CC0 1.0 Universal (public-domain dedication)
 - Source: <https://opengameart.org/content/short-loops-background-music-pack>
 - Bundled file: [public/audio/wizino-magical-loop.ogg](public/audio/wizino-magical-loop.ogg)
+- Modification: Trimmed to a 48-beat boundary at 190 BPM, with the natural
+  reverb tail folded under the opening for a gapless loop and normalized to
+  provide safe peak headroom.
 
 Font packages are delivered by [Fontsource](https://fontsource.org/).
