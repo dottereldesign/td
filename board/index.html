@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#090909" />
+    <meta name="description" content="A shared build board for Jamie and Braxton." />
+    <title>Build Board · Jamie &amp; Braxton</title>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="./" aria-label="Build Board home">
+          <span class="brand-mark">B/J</span>
+          <span><strong>Build Board</strong><small>Jamie + Braxton</small></span>
+        </a>
+
+        <div class="topbar-actions">
+          <span class="sync-state" id="sync-state"><i data-lucide="cloud"></i><span>Ready</span></span>
+          <button class="icon-button" id="refresh-button" type="button" aria-label="Refresh shared board" title="Refresh board">
+            <i data-lucide="refresh-cw"></i>
+          </button>
+          <button class="user-button" id="user-button" type="button" aria-label="Account and sync settings">
+            <span id="user-initial">?</span><strong id="user-name">Sign in</strong><i data-lucide="chevron-down"></i>
+          </button>
+        </div>
+      </header>
+
+      <main>
+        <section class="page-heading">
+          <div>
+            <p class="eyebrow">Shared workspace</p>
+            <h1>What are we building?</h1>
+            <p>Capture it, commit to it, finish it. One source of truth for both of you.</p>
+          </div>
+          <button class="primary-button" id="add-note-button" type="button"><i data-lucide="plus"></i>Add note</button>
+        </section>
+
+        <section class="summary-grid" aria-label="Board summary">
+          <div><small>Open work</small><strong id="open-count">0</strong></div>
+          <div><small>In progress</small><strong id="progress-count">0 / 3</strong></div>
+          <div><small>Done this week</small><strong id="done-count">0</strong></div>
+          <div class="summary-message"><small>Working agreement</small><strong>Finish before starting more.</strong></div>
+        </section>
+
+        <section class="board-tools" aria-label="Board tools">
+          <label class="search-field">
+            <i data-lucide="search"></i>
+            <span class="sr-only">Search notes</span>
+            <input id="search-input" type="search" placeholder="Search notes, projects, people…" autocomplete="off" />
+            <kbd>/</kbd>
+          </label>
+          <div class="scope-switch" role="group" aria-label="Filter by ownership">
+            <button class="is-active" type="button" data-scope="all">All</button>
+            <button type="button" data-scope="mine">Mine</button>
+          </div>
+        </section>
+
+        <section class="kanban" id="kanban" aria-label="Shared Kanban board"></section>
+
+        <footer class="page-footer">
+          <span><i data-lucide="github"></i>Shared live through GitHub</span>
+          <span>Press <kbd>N</kbd> for a new note · drag cards to move them</span>
+        </footer>
+      </main>
+    </div>
+
+    <dialog class="dialog dialog--auth" id="login-dialog">
+      <div class="dialog-panel">
+        <span class="dialog-mark">B/J</span>
+        <p class="eyebrow">Private workspace</p>
+        <h2>Welcome back.</h2>
+        <p>Sign in as yourself so every note, comment, and vote has the right name on it.</p>
+        <form id="login-form">
+          <label>Username<input id="login-username" name="username" autocomplete="username" required /></label>
+          <label>Password<input id="login-password" name="password" type="password" autocomplete="current-password" required /></label>
+          <p class="form-error" id="login-error" role="alert"></p>
+          <button class="primary-button primary-button--wide" type="submit">Sign in<i data-lucide="arrow-right"></i></button>
+        </form>
+      </div>
+    </dialog>
+
+    <dialog class="dialog" id="sync-dialog">
+      <div class="dialog-panel">
+        <button class="dialog-close" data-close-dialog="sync-dialog" type="button" aria-label="Close"><i data-lucide="x"></i></button>
+        <p class="eyebrow">One-time shared sync</p>
+        <h2>Connect the board.</h2>
+        <p>Paste a GitHub token with <strong>Issues: read and write</strong> access to <strong>dottereldesign/td</strong>. You can use the same token on both devices. It stays in this browser.</p>
+        <ol class="setup-steps">
+          <li>Create a fine-grained token for the repository.</li>
+          <li>Set repository permission <strong>Issues</strong> to <strong>Read and write</strong>.</li>
+          <li>Paste it below and connect.</li>
+        </ol>
+        <form id="sync-form">
+          <label>GitHub token<input id="token-input" name="token" type="password" placeholder="github_pat_…" autocomplete="off" required /></label>
+          <p class="form-error" id="sync-error" role="alert"></p>
+          <div class="dialog-actions">
+            <a class="secondary-button" href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noreferrer">Create token<i data-lucide="external-link"></i></a>
+            <button class="primary-button" type="submit">Connect board<i data-lucide="cloud"></i></button>
+          </div>
+        </form>
+        <button class="text-button" id="read-only-button" type="button">Continue in read-only mode</button>
+      </div>
+    </dialog>
+
+    <dialog class="dialog" id="account-dialog">
+      <div class="dialog-panel dialog-panel--compact">
+        <button class="dialog-close" data-close-dialog="account-dialog" type="button" aria-label="Close"><i data-lucide="x"></i></button>
+        <p class="eyebrow">Account</p>
+        <h2 id="account-title">Signed in</h2>
+        <p id="account-copy">Your activity is labelled with this name.</p>
+        <div class="account-status"><span id="account-avatar">J</span><div><strong id="account-name">Jamie</strong><small id="account-sync">GitHub sync connected</small></div></div>
+        <div class="dialog-actions dialog-actions--stack">
+          <button class="secondary-button" id="change-token-button" type="button"><i data-lucide="key-round"></i>Change sync token</button>
+          <button class="secondary-button secondary-button--danger" id="sign-out-button" type="button"><i data-lucide="log-out"></i>Sign out</button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog class="dialog" id="note-dialog">
+      <div class="dialog-panel">
+        <button class="dialog-close" data-close-dialog="note-dialog" type="button" aria-label="Close"><i data-lucide="x"></i></button>
+        <p class="eyebrow">New shared note</p>
+        <h2>Capture the next move.</h2>
+        <form id="note-form">
+          <label>Title<input id="note-title" name="title" maxlength="100" placeholder="What should we build or decide?" required /></label>
+          <label>Details<textarea id="note-body" name="body" rows="5" maxlength="4000" placeholder="Add enough context for the other person to act…"></textarea></label>
+          <div class="form-grid">
+            <label>Stage<select id="note-status" name="status"><option value="ideas">Ideas</option><option value="next">Up next</option><option value="progress">In progress</option><option value="complete">Complete</option></select></label>
+            <label>Owner<select id="note-owner" name="owner"><option value="both">Both</option><option value="jamie">Jamie</option><option value="braxton">Braxton</option></select></label>
+            <label>Priority<select id="note-priority" name="priority"><option value="normal">Normal</option><option value="high">High</option><option value="low">Low</option></select></label>
+            <label>Due date<input id="note-due-date" name="dueDate" type="date" /></label>
+          </div>
+          <label>Project <span>(optional)</span><input id="note-project" name="project" maxlength="40" placeholder="e.g. Wizino TD" /></label>
+          <p class="form-error" id="note-error" role="alert"></p>
+          <div class="dialog-actions">
+            <button class="secondary-button" data-close-dialog="note-dialog" type="button">Cancel</button>
+            <button class="primary-button" type="submit">Add to board<i data-lucide="arrow-up-right"></i></button>
+          </div>
+        </form>
+      </div>
+    </dialog>
+
+    <dialog class="dialog dialog--detail" id="detail-dialog">
+      <div class="dialog-panel" id="detail-content"></div>
+    </dialog>
+
+    <div class="toast-region" id="toast-region" aria-live="polite" aria-atomic="true"></div>
+    <script type="module" src="../src/board/main.ts"></script>
+  </body>
+</html>
