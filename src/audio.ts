@@ -1,38 +1,48 @@
 import type { GameEvent } from './types';
 
 export type UiSound = 'click' | 'card' | 'confirm' | 'toggle' | 'back' | 'open' | 'tower';
+export type UiSoundPack = 'magic-chimes' | 'cozy-clicks' | 'gentle-quest';
+
+export const UI_SOUND_PACKS: ReadonlyArray<{ id: UiSoundPack; name: string; description: string }> = [
+  { id: 'magic-chimes', name: 'Magic Chimes', description: 'Soft bells and orchestral taps.' },
+  { id: 'cozy-clicks', name: 'Cozy Clicks', description: 'Warm, organic switches and wooden clicks.' },
+  { id: 'gentle-quest', name: 'Gentle Quest', description: 'Polished storybook adventure cues.' },
+];
+
+export function isUiSoundPack(value: unknown): value is UiSoundPack {
+  return UI_SOUND_PACKS.some((pack) => pack.id === value);
+}
 
 export interface AudioChannels {
   musicEnabled: boolean;
   effectsEnabled: boolean;
+  soundPack: UiSoundPack;
 }
 
-const UI_SOUND_FILES: Record<UiSound, string> = {
-  click: 'click.ogg',
-  card: 'card.ogg',
-  confirm: 'confirm.ogg',
-  toggle: 'toggle.ogg',
-  back: 'back.ogg',
-  open: 'open.ogg',
-  tower: 'tower.ogg',
+const UI_SOUND_FILES: Record<UiSoundPack, Record<UiSound, string>> = {
+  'magic-chimes': Object.fromEntries(['click', 'card', 'confirm', 'toggle', 'back', 'open', 'tower'].map((sound) => [sound, `${sound}.ogg`])) as Record<UiSound, string>,
+  'cozy-clicks': Object.fromEntries(['click', 'card', 'confirm', 'toggle', 'back', 'open', 'tower'].map((sound) => [sound, `${sound}.wav`])) as Record<UiSound, string>,
+  'gentle-quest': Object.fromEntries(['click', 'card', 'confirm', 'toggle', 'back', 'open', 'tower'].map((sound) => [sound, `${sound}.mp3`])) as Record<UiSound, string>,
 };
 
 export function resolveUiSoundUrl(
   sound: UiSound,
+  pack: UiSoundPack = 'magic-chimes',
   pageBase = document.baseURI,
   appBase = './',
 ): string {
-  return new URL(`${appBase}audio/ui/${UI_SOUND_FILES[sound]}`, pageBase).href;
+  return new URL(`${appBase}audio/ui/packs/${pack}/${UI_SOUND_FILES[pack][sound]}`, pageBase).href;
 }
 
 export class AudioEngine {
   muted: boolean;
   private context: AudioContext | null = null;
   private readonly music = document.getElementById('background-music') as HTMLAudioElement | null;
-  private readonly effectBuffers = new Map<UiSound, AudioBuffer>();
-  private readonly effectLoads = new Map<UiSound, Promise<AudioBuffer | null>>();
+  private readonly effectBuffers = new Map<string, AudioBuffer>();
+  private readonly effectLoads = new Map<string, Promise<AudioBuffer | null>>();
   private musicEnabled = true;
   private effectsEnabled = true;
+  private soundPack: UiSoundPack = 'magic-chimes';
   private effectPlays = 0;
   private lastEffect: UiSound | null = null;
   private lastShotAt = 0;
@@ -53,6 +63,7 @@ export class AudioEngine {
   configure(channels: AudioChannels): void {
     this.musicEnabled = channels.musicEnabled;
     this.effectsEnabled = channels.effectsEnabled;
+    this.soundPack = channels.soundPack;
     if (!this.musicEnabled) this.music?.pause();
     else if (!this.muted) this.unlock();
     if (this.effectsEnabled && this.context) void this.preloadEffects();
@@ -79,15 +90,15 @@ export class AudioEngine {
     }
     void this.loadEffect(sound).then((loaded) => {
       if (loaded && this.effectsEnabled) this.playBuffer(sound, loaded);
-      else if (this.effectsEnabled) this.playFallback(sound);
     });
   }
 
-  getDiagnostics(): { muted: boolean; musicEnabled: boolean; effectsEnabled: boolean; contextState: AudioContextState | 'unavailable'; loadedEffects: number; effectPlays: number; lastEffect: UiSound | null } {
+  getDiagnostics(): { muted: boolean; musicEnabled: boolean; effectsEnabled: boolean; soundPack: UiSoundPack; contextState: AudioContextState | 'unavailable'; loadedEffects: number; effectPlays: number; lastEffect: UiSound | null } {
     return {
       muted: this.muted,
       musicEnabled: this.musicEnabled,
       effectsEnabled: this.effectsEnabled,
+      soundPack: this.soundPack,
       contextState: this.context?.state ?? 'unavailable',
       loadedEffects: this.effectBuffers.size,
       effectPlays: this.effectPlays,
@@ -140,29 +151,31 @@ export class AudioEngine {
   }
 
   private async preloadEffects(): Promise<void> {
-    await Promise.all((Object.keys(UI_SOUND_FILES) as UiSound[]).map((sound) => this.loadEffect(sound)));
+    await Promise.all((Object.keys(UI_SOUND_FILES[this.soundPack]) as UiSound[]).map((sound) => this.loadEffect(sound)));
   }
 
   private loadEffect(sound: UiSound): Promise<AudioBuffer | null> {
-    const cached = this.effectBuffers.get(sound);
+    const pack = this.soundPack;
+    const key = `${pack}:${sound}`;
+    const cached = this.effectBuffers.get(key);
     if (cached) return Promise.resolve(cached);
-    const pending = this.effectLoads.get(sound);
+    const pending = this.effectLoads.get(key);
     if (pending) return pending;
     if (!this.context) return Promise.resolve(null);
 
-    const load = fetch(resolveUiSoundUrl(sound))
+    const load = fetch(resolveUiSoundUrl(sound, pack))
       .then((response) => {
         if (!response.ok) throw new Error(`Unable to load ${sound} sound.`);
         return response.arrayBuffer();
       })
       .then((data) => this.context?.decodeAudioData(data) ?? null)
       .then((buffer) => {
-        if (buffer) this.effectBuffers.set(sound, buffer);
+        if (buffer) this.effectBuffers.set(key, buffer);
         return buffer;
       })
       .catch(() => null)
-      .finally(() => this.effectLoads.delete(sound));
-    this.effectLoads.set(sound, load);
+      .finally(() => this.effectLoads.delete(key));
+    this.effectLoads.set(key, load);
     return load;
   }
 
@@ -171,7 +184,9 @@ export class AudioEngine {
     const source = this.context.createBufferSource();
     const gain = this.context.createGain();
     source.buffer = buffer;
-    gain.gain.value = sound === 'confirm' ? 0.26 : sound === 'tower' ? 0.22 : sound === 'click' ? 0.18 : 0.2;
+    const packVolume = this.soundPack === 'cozy-clicks' ? 0.72 : this.soundPack === 'gentle-quest' ? 0.38 : 0.34;
+    const soundVolume = sound === 'confirm' ? 1 : sound === 'tower' ? 0.9 : sound === 'click' ? 0.76 : 0.84;
+    gain.gain.value = packVolume * soundVolume;
     source.connect(gain);
     gain.connect(this.context.destination);
     source.start();
@@ -179,18 +194,4 @@ export class AudioEngine {
     this.lastEffect = sound;
   }
 
-  private playFallback(sound: UiSound): void {
-    const frequencies: Record<UiSound, number[]> = {
-      click: [520],
-      card: [390, 520],
-      confirm: [440, 660],
-      toggle: [480, 580],
-      back: [430, 310],
-      open: [360, 480],
-      tower: [260, 390],
-    };
-    this.sequence(frequencies[sound], 0.045, 0.055);
-    this.effectPlays += 1;
-    this.lastEffect = sound;
-  }
 }

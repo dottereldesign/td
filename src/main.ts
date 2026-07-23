@@ -101,7 +101,9 @@ document.addEventListener('click', (event) => {
 }, { capture: true });
 
 document.addEventListener('change', (event) => {
-  if ((event.target as HTMLElement).matches('input[type="checkbox"]')) audio.playUi('toggle');
+  const target = event.target as HTMLElement;
+  if (target.matches('select[data-setting="soundPack"]')) audio.playUi('confirm');
+  else if (target.matches('input[type="checkbox"]')) audio.playUi('toggle');
 });
 
 document.addEventListener('keydown', (event) => {

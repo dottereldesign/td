@@ -49,14 +49,13 @@ Wizino TD's terrain, route, towers, circular enemies, armor marks, projectiles, 
   reverb tail folded under the opening for a gapless loop and normalized to
   provide safe peak headroom.
 
-## Kenney Interface Sounds
+## Selectable UI sound packs
 
-- Author: Kenney
-- Use: Button, card, navigation, toggle, confirmation, and tower interaction sounds
+- Packs: Magic Chimes by Robin Lamb, Cozy Clicks by Kenney, and Gentle Quest by Joth
+- Use: Selectable button, card, navigation, toggle, confirmation, and tower interaction sounds
 - License: CC0 1.0 Universal (public-domain dedication)
-- Source: <https://opengameart.org/content/interface-sounds>
-- Bundled files: Seven selected and semantically renamed OGG effects under
-  [public/audio/ui](public/audio/ui)
-- License copy: [public/licenses/KENNEY-INTERFACE-SOUNDS.txt](public/licenses/KENNEY-INTERFACE-SOUNDS.txt)
+- Sources: [UI Sound Effects](https://opengameart.org/content/ui-sound-effects-button-clicks-user-feedback-notifications), [51 UI sound effects](https://opengameart.org/content/51-ui-sound-effects-buttons-switches-and-clicks), and [7 Assorted Sound Effects](https://opengameart.org/content/7-assorted-sound-effects-menu-level-up)
+- Bundled files: Selected and semantically renamed effects under [public/audio/ui/packs](public/audio/ui/packs)
+- License copy: [public/licenses/CC0-UI-SOUND-PACKS.txt](public/licenses/CC0-UI-SOUND-PACKS.txt)
 
 Font packages are delivered by [Fontsource](https://fontsource.org/).

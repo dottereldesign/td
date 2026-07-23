@@ -1,8 +1,11 @@
+import type { UiSoundPack } from './audio';
+
 export const PLAYER_PROGRESS_KEY = 'wizino-td-player-v1';
 
 export interface PlayerSettings {
   musicEnabled: boolean;
   effectsEnabled: boolean;
+  soundPack: UiSoundPack;
   reducedMotion: boolean;
   gameplayTips: boolean;
 }
@@ -90,7 +93,7 @@ export function createDefaultProgress(): PlayerProgress {
     lastVictoryDate: null,
     lastDailyClaim: null,
     claimedMissions: [],
-    settings: { musicEnabled: true, effectsEnabled: true, reducedMotion: false, gameplayTips: true },
+    settings: { musicEnabled: true, effectsEnabled: true, soundPack: 'magic-chimes', reducedMotion: false, gameplayTips: true },
   };
 }
 
@@ -240,6 +243,9 @@ function normalizeProgress(value: Partial<PlayerProgress>, defaults: PlayerProgr
     settings: {
       musicEnabled: incomingSettings?.musicEnabled ?? defaults.settings.musicEnabled,
       effectsEnabled: incomingSettings?.effectsEnabled ?? defaults.settings.effectsEnabled,
+      soundPack: incomingSettings?.soundPack === 'cozy-clicks' || incomingSettings?.soundPack === 'gentle-quest'
+        ? incomingSettings.soundPack
+        : defaults.settings.soundPack,
       reducedMotion: incomingSettings?.reducedMotion ?? defaults.settings.reducedMotion,
       gameplayTips: incomingSettings?.gameplayTips ?? defaults.settings.gameplayTips,
     },

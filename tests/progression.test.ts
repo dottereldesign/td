@@ -38,6 +38,7 @@ describe('local guest progression', () => {
     expect(player.leaderboard).toEqual([]);
     expect(player.settings.musicEnabled).toBe(true);
     expect(player.settings.effectsEnabled).toBe(true);
+    expect(player.settings.soundPack).toBe('magic-chimes');
   });
 
   it('keeps both new channels enabled when loading the previous combined setting', () => {

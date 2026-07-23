@@ -1,5 +1,5 @@
 import { ARMOR_CODES, ARMOR_LABELS, LEVELS, TOWER_ORDER, WORLDS, getTowerDefinition, getWorld } from '../data';
-import type { AudioChannels } from '../audio';
+import { UI_SOUND_PACKS, isUiSoundPack, type AudioChannels } from '../audio';
 import { DAMAGE_MATRIX, matchupLabel } from '../game/damage';
 import { Game } from '../game/Game';
 import { HOME_WORLD_ART } from '../homeAssets';
@@ -722,6 +722,7 @@ export class UI {
       <div class="settings-list">
         ${setting('musicEnabled', 'Background music', 'The seamless magical soundtrack across every game screen.', this.progress.settings.musicEnabled)}
         ${setting('effectsEnabled', 'Game sounds', 'Button clicks, cards, towers, battle cues, and reward sounds.', this.progress.settings.effectsEnabled)}
+        <label class="setting-row setting-row--select"><span><strong>Sound style</strong><small>Choose a pack—each change plays an instant preview.</small></span><select data-setting="soundPack" aria-label="Sound style">${UI_SOUND_PACKS.map((pack) => `<option value="${pack.id}" ${this.progress.settings.soundPack === pack.id ? 'selected' : ''}>${pack.name} — ${pack.description}</option>`).join('')}</select></label>
         ${setting('reducedMotion', 'Reduce motion', 'Minimize flips, transitions, and animated effects.', this.progress.settings.reducedMotion)}
         ${setting('gameplayTips', 'Gameplay tips', 'Show contextual guidance over the battlefield.', this.progress.settings.gameplayTips)}
       </div>
@@ -817,11 +818,15 @@ export class UI {
   }
 
   private handleSettingChange(event: Event): void {
-    const input = (event.target as HTMLElement).closest<HTMLInputElement>('[data-setting]');
+    const input = (event.target as HTMLElement).closest<HTMLInputElement | HTMLSelectElement>('[data-setting]');
     if (!input?.dataset.setting) return;
     const setting = input.dataset.setting as keyof PlayerProgress['settings'];
-    this.progress.settings[setting] = input.checked;
-    if (setting === 'musicEnabled' || setting === 'effectsEnabled') this.applyAudioSettings();
+    if (setting === 'soundPack' && input instanceof HTMLSelectElement && isUiSoundPack(input.value)) {
+      this.progress.settings.soundPack = input.value;
+    } else if (input instanceof HTMLInputElement && setting !== 'soundPack') {
+      this.progress.settings[setting] = input.checked;
+    }
+    if (setting === 'musicEnabled' || setting === 'effectsEnabled' || setting === 'soundPack') this.applyAudioSettings();
     this.applySettings();
     this.persistProgress();
   }
@@ -830,6 +835,7 @@ export class UI {
     this.onAudioSettingsChange({
       musicEnabled: this.progress.settings.musicEnabled,
       effectsEnabled: this.progress.settings.effectsEnabled,
+      soundPack: this.progress.settings.soundPack,
     });
   }
 

@@ -1,0 +1,12 @@
+The bundled Magic Chimes, Cozy Clicks, and Gentle Quest UI sound selections are
+released under the Creative Commons CC0 1.0 Universal public-domain dedication.
+
+License: https://creativecommons.org/publicdomain/zero/1.0/
+
+Sources:
+- Magic Chimes: Robin Lamb, UI Sound Effects (Button Clicks, User Feedback,
+  Notifications), https://opengameart.org/content/ui-sound-effects-button-clicks-user-feedback-notifications
+- Cozy Clicks: Kenney, 51 UI sound effects (buttons, switches and clicks),
+  https://opengameart.org/content/51-ui-sound-effects-buttons-switches-and-clicks
+- Gentle Quest: Joth, 7 Assorted Sound Effects (Menu, Level Up),
+  https://opengameart.org/content/7-assorted-sound-effects-menu-level-up
