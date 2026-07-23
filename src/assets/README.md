@@ -14,6 +14,8 @@ home/
   icons/        transparent profile and activity cutouts
   panels/       event and squad illustrations
   worlds/       portrait learning-world card art
+cards/
+  starters/     optimized starter collection art and shared card-back surface
 ui/
   buttons/      transparent game UI controls
   frames/       responsive nine-slice dialog frames

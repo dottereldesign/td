@@ -2,9 +2,10 @@ import { ARMOR_CODES, ARMOR_LABELS, LEVELS, TOWER_ORDER, WORLDS, getTowerDefinit
 import { UI_SOUND_PACKS, isUiSoundPack, type AudioChannels } from '../audio';
 import { DAMAGE_MATRIX, matchupLabel } from '../game/damage';
 import { Game } from '../game/Game';
+import { COLLECTION_CARD_BACK } from '../collectionAssets';
 import { HOME_WORLD_ART } from '../homeAssets';
 import { refreshIcons } from '../icons';
-import { LEARNING_CARDS } from '../learningCards';
+import { LEARNING_CARDS, STARTER_CARDS, type CollectionCard } from '../learningCards';
 import type { PerformanceMonitor } from '../performance/PerformanceMonitor';
 import type { ArmorType, AttackType, GameEvent, LevelDefinition, TargetMode, TowerId } from '../types';
 import type { WorldId } from '../types';
@@ -647,7 +648,8 @@ export class UI {
       mission.progress(this.progress) >= mission.target && !this.progress.claimedMissions.includes(mission.id)
     )).length;
     const achievements = this.achievementRecords().filter((entry) => entry.unlocked).length;
-    const collection = LEARNING_CARDS.filter((card) => (this.progress.stars[card.levelId] ?? 0) > 0).length;
+    const collection = STARTER_CARDS.length
+      + LEARNING_CARDS.filter((card) => (this.progress.stars[card.levelId] ?? 0) > 0).length;
     this.setHomeBadge('home-missions-badge', claimableMissions);
     this.setHomeBadge('home-daily-badge', canClaimDaily(this.progress) ? 1 : 0);
     this.setHomeBadge('home-achievements-badge', achievements);
@@ -669,7 +671,7 @@ export class UI {
       missions: ['MISSION BOARD', 'Missions', 'Complete learning and defense goals to earn local rewards.'],
       daily: ['DAILY DROP', 'Daily rewards', 'Return each local calendar day for a fresh supply drop.'],
       achievements: ['MILESTONES', 'Achievements', 'Permanent milestones from your learning adventure.'],
-      collection: ['MEMORY DECK', 'Learning collection', 'Clear levels to unlock two-sided study cards. Tap a card to flip it.'],
+      collection: ['STARTER ARCHIVE', 'Creature collection', 'Four guardians are already yours. Clear levels to discover more, then tap any card to reveal its answer.'],
       leaderboard: ['LOCAL RECORDS', 'Leaderboards', 'Each new level highscore is added to this browser-only leaderboard.'],
     };
     const text = panelCopy[panel] ?? panelCopy.profile;
@@ -742,8 +744,61 @@ export class UI {
 
   private collectionMarkup(): string {
     const unlocked = LEARNING_CARDS.filter((card) => (this.progress.stars[card.levelId] ?? 0) > 0);
-    if (unlocked.length === 0) return '<div class="empty-progress"><strong>Your memory deck is waiting</strong><p>Clear any level to unlock its fact card. Each card has a question on the front and a learning answer on the back.</p></div>';
-    return `<div class="collection-grid">${unlocked.map((card) => `<button class="learning-card" type="button" data-learning-card aria-label="Flip ${card.subject} learning card"><span class="learning-card-inner"><span class="learning-card-face"><small>${card.subject} · Question</small><strong>${card.prompt}</strong><em>Tap to reveal</em></span><span class="learning-card-face learning-card-back"><small>${card.subject} · Answer</small><strong>${card.answer}</strong><em>Tap to review</em></span></span></button>`).join('')}</div>`;
+    const cards: CollectionCard[] = [...STARTER_CARDS, ...unlocked];
+    return `
+      <div class="collection-deckbar">
+        <span><small>Starter deck</small><strong>${STARTER_CARDS.length} guardians included</strong></span>
+        <p>Every creature protects a learning answer. Flip one to study it.</p>
+        <em>Swipe to browse</em>
+      </div>
+      <div class="collection-grid" aria-label="Collected learning cards">
+        ${cards.map((card, index) => this.collectionCardMarkup(card, index)).join('')}
+      </div>
+    `;
+  }
+
+  private collectionCardMarkup(card: CollectionCard, index: number): string {
+    const isStarter = 'starter' in card;
+    const art = isStarter ? card.art : HOME_WORLD_ART[card.world];
+    const origin = isStarter ? `Starter ${index + 1}/${STARTER_CARDS.length}` : 'Level reward';
+    return `
+      <button
+        class="learning-card learning-card--${card.finish}"
+        type="button"
+        data-learning-card
+        data-card-id="${card.id}"
+        aria-label="Flip ${card.name} to reveal the answer"
+        aria-pressed="false"
+        style="--card-accent:${card.accent};--card-back-art:url(${COLLECTION_CARD_BACK})"
+      >
+        <span class="learning-card-inner">
+          <span class="learning-card-face learning-card-front">
+            <span class="learning-card-header">
+              <span><small>${card.subject}</small><strong>${card.name}</strong></span>
+              <b>${card.rarity}</b>
+            </span>
+            <span class="learning-card-art">
+              <img src="${art}" alt="" loading="${isStarter ? 'eager' : 'lazy'}" decoding="async">
+            </span>
+            <span class="learning-card-question"><small>Knowledge challenge</small><strong>${card.prompt}</strong></span>
+            <span class="learning-card-stats">
+              <span><small>Toughness</small><b>${card.toughness}</b></span>
+              <span><small>Defense</small><b>${card.defense}</b></span>
+            </span>
+            <span class="learning-card-footer"><small>${origin}</small><em>Tap to reveal</em></span>
+          </span>
+          <span class="learning-card-face learning-card-back">
+            <span class="learning-card-answer">
+              <small>${card.subject} answer</small>
+              <b aria-hidden="true">✦</b>
+              <strong>${card.answer}</strong>
+              <i aria-hidden="true"></i>
+              <em>Tap to return to ${card.name}</em>
+            </span>
+          </span>
+        </span>
+      </button>
+    `;
   }
 
   private leaderboardMarkup(): string {
@@ -767,7 +822,8 @@ export class UI {
     const target = event.target as HTMLElement;
     const card = target.closest<HTMLElement>('[data-learning-card]');
     if (card) {
-      card.classList.toggle('is-flipped');
+      const isFlipped = card.classList.toggle('is-flipped');
+      card.setAttribute('aria-pressed', String(isFlipped));
       return;
     }
     const dailyButton = target.closest<HTMLButtonElement>('[data-claim-daily]');

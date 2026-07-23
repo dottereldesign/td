@@ -207,7 +207,9 @@ test('opens functional mission, achievement, collection, and leaderboard panels'
   await panel.getByRole('button', { name: 'Close' }).click();
 
   await page.getByRole('button', { name: /Collection/i }).click();
-  await expect(panel.getByText('Your memory deck is waiting')).toBeVisible();
+  await expect(panel.getByText('4 guardians included')).toBeVisible();
+  await expect(panel.locator('[data-learning-card]')).toHaveCount(4);
+  await expect(panel.locator('.learning-card--holographic')).toHaveCount(1);
   await panel.getByRole('button', { name: 'Close' }).click();
 
   await page.getByRole('button', { name: 'Leaderboards' }).click();
@@ -231,17 +233,47 @@ test('shows unlocked learning cards and local leaderboard records', async ({ pag
 
   await page.getByRole('button', { name: /Collection/i }).click();
   const panel = page.locator('#home-panel-modal');
-  const card = panel.locator('[data-learning-card]');
-  await expect(card).toHaveCount(1);
+  const cards = panel.locator('[data-learning-card]');
+  const card = panel.locator('[data-card-id="forest-1"]');
+  await expect(cards).toHaveCount(5);
   await expect(card).toContainText('What connects every organism in a food web?');
   if (process.env.CAPTURE_HOME) await page.screenshot({ path: 'tmp/collection-panel-qa.png', fullPage: true });
   await card.click();
   await expect(card).toHaveClass(/is-flipped/);
+  await expect(card).toHaveAttribute('aria-pressed', 'true');
   await panel.getByRole('button', { name: 'Close' }).click();
 
   await page.getByRole('button', { name: 'Leaderboards' }).click();
   await expect(panel.getByText('Mossy Crossing')).toBeVisible();
   await expect(panel.getByText('5,400')).toBeVisible();
+});
+
+test('uses TCG proportions and a swipeable collection rail on mobile', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await page.getByRole('button', { name: /Collection/i }).click();
+
+  const panel = page.locator('#home-panel-modal');
+  const cards = panel.locator('[data-learning-card]');
+  await expect(cards).toHaveCount(4);
+  await expect.poll(async () => cards.locator('img').evaluateAll((images) => (
+    images.every((image) => (image as HTMLImageElement).complete && (image as HTMLImageElement).naturalWidth > 0)
+  ))).toBe(true);
+
+  const layout = await panel.evaluate((backdrop) => {
+    const grid = backdrop.querySelector<HTMLElement>('.collection-grid')!;
+    const card = backdrop.querySelector<HTMLElement>('.learning-card')!;
+    const rect = card.getBoundingClientRect();
+    return {
+      ratio: rect.width / rect.height,
+      scrollsHorizontally: grid.scrollWidth > grid.clientWidth,
+      snap: getComputedStyle(grid).scrollSnapType,
+    };
+  });
+
+  expect(layout.ratio).toBeCloseTo(5 / 7, 1);
+  expect(layout.scrollsHorizontally).toBe(true);
+  expect(layout.snap).toContain('x');
 });
 
 test('play opens a dedicated three-by-two world page', async ({ page }) => {
