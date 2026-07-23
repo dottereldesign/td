@@ -25,7 +25,10 @@ test('renders the illustrated home dashboard and opens a world', async ({ page }
   await expect(premium).toContainText('Get premium!');
   await expect(premium).toContainText('Unlock the full game on mobile');
   await expect(premium).toContainText('no ads');
-  await expect(premium.locator('.home-premium-stores svg')).toHaveCount(2);
+  const storeBadges = premium.locator('.home-premium-stores img');
+  await expect(storeBadges).toHaveCount(2);
+  await expect(storeBadges.nth(0)).toHaveAttribute('src', '/assets/store-badges/download-on-app-store.webp');
+  await expect(storeBadges.nth(1)).toHaveAttribute('src', '/assets/store-badges/get-it-on-google-play.webp');
   const modalFrameStyles = await page.locator('.modal').evaluateAll((modals) => modals.map((modal) => {
     const style = getComputedStyle(modal);
     return { source: style.borderImageSource, slice: style.borderImageSlice };

@@ -58,4 +58,13 @@ Wizino TD's terrain, route, towers, circular enemies, armor marks, projectiles, 
 - Bundled files: Selected and semantically renamed effects under [public/audio/ui/packs](public/audio/ui/packs)
 - License copy: [public/licenses/CC0-UI-SOUND-PACKS.txt](public/licenses/CC0-UI-SOUND-PACKS.txt)
 
+## Mobile store badges
+
+- Use: Official "Download on the App Store" and "Get it on Google Play" badges in the homepage premium callout
+- Sources: [Apple App Store marketing resources](https://developer.apple.com/app-store/marketing/guidelines/) and [Google Play badge resources](https://play.google.com/console/about/brand-and-marketing/)
+- Bundled files: [public/assets/store-badges](public/assets/store-badges)
+- Modification: WebP format conversion only; the supplied artwork and proportions are retained.
+- Apple, the Apple logo, and App Store are trademarks of Apple Inc., registered in the U.S. and other countries.
+- Google Play and the Google Play logo are trademarks of Google LLC.
+
 Font packages are delivered by [Fontsource](https://fontsource.org/).
