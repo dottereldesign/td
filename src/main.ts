@@ -82,7 +82,7 @@ document.addEventListener('pointerdown', () => audio.unlock(), { once: true });
 
 document.addEventListener('pointerdown', (event) => {
   const target = event.target as HTMLElement;
-  const mutingMaster = target.closest('#sound-button[aria-pressed="true"]');
+  const mutingMaster = target.closest('#sound-button[aria-pressed="true"], #home-sound-button[aria-pressed="true"]');
   const disablingEffects = target.closest('input[data-setting="effectsEnabled"]:checked');
   if (mutingMaster || disablingEffects) audio.playUi('toggle');
 });
@@ -94,7 +94,7 @@ document.addEventListener('click', (event) => {
   if (button.matches('.tower-card')) sound = 'tower';
   else if (button.matches('.home-world, .world-card, .level-card, .learning-card')) sound = 'card';
   else if (button.matches('.home-play, #home-adventure-button, #wave-button, #deploy-button, #upgrade-button, #outcome-retry, [data-claim-daily], [data-claim-mission]')) sound = 'confirm';
-  else if (button.matches('#sound-button')) sound = 'toggle';
+  else if (button.matches('#sound-button, #home-sound-button')) sound = 'toggle';
   else if (button.matches('.modal-close, #selection-home-button, #world-back-button, #outcome-levels')) sound = 'back';
   else if (button.matches('[data-home-panel], #level-menu-button, #help-button')) sound = 'open';
   audio.playUi(sound);
@@ -159,6 +159,17 @@ const STEP = 1 / 60;
 function frame(now: number): void {
   const elapsed = Math.min(0.1, Math.max(0, (now - lastFrame) / 1_000));
   lastFrame = now;
+
+  // Home, menu, settings, and world-selection screens cover the battlefield.
+  // Keep the compositor-driven UI animations, but avoid simulating, drawing a
+  // hidden canvas, or refreshing an invisible HUD while those screens are up.
+  if (ui.shouldSuspendGameLoop()) {
+    accumulator = 0;
+    nextCanvasDraw = 0;
+    requestAnimationFrame(frame);
+    return;
+  }
+
   accumulator += elapsed;
 
   const simulationMark = performanceMonitor.beginPhase('simulation');

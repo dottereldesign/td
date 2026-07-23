@@ -7,7 +7,9 @@ interface CdpMetric {
 
 interface FrameSample {
   averageFps: number;
+  cadenceFps: number;
   averageFrameMs: number;
+  medianFrameMs: number;
   p95FrameMs: number;
   worstFrameMs: number;
   droppedFrameRatio: number;
@@ -38,7 +40,10 @@ test('busy combat remains inside the interactive frame budget', async ({ page, c
   });
 
   await page.goto('/?perf=1');
-  await page.getByRole('button', { name: /Deploy to sector/i }).click();
+  await page.getByRole('button', { name: 'Start adventure' }).click();
+  await page.locator('[data-world="forest"]').click();
+  await page.getByRole('button', { name: /View maps/i }).click();
+  await page.locator('[data-level]').first().click();
   await page.waitForFunction(() => document.fonts.status === 'loaded');
 
   const scene = stress
@@ -129,15 +134,20 @@ test('busy combat remains inside the interactive frame budget', async ({ page, c
 
     const ordered = [...intervals].sort((a, b) => a - b);
     const averageFrameMs = intervals.reduce((sum, value) => sum + value, 0) / intervals.length;
+    const medianFrameMs = ordered[Math.min(ordered.length - 1, Math.floor(ordered.length * 0.5))];
     const p95FrameMs = ordered[Math.min(ordered.length - 1, Math.floor(ordered.length * 0.95))];
     const canvas = document.querySelector<HTMLCanvasElement>('#game-canvas')!;
     const game = window.__WIZINO_TD__.game;
     return {
       averageFps: 1_000 / averageFrameMs,
+      cadenceFps: 1_000 / medianFrameMs,
       averageFrameMs,
+      medianFrameMs,
       p95FrameMs,
       worstFrameMs: ordered.at(-1) ?? 0,
-      droppedFrameRatio: intervals.filter((value) => value > 25).length / intervals.length,
+      // Headless/browser hosts can be synchronized to 30, 60, or 120 Hz.
+      // Count frames that miss the measured cadence rather than assuming 60 Hz.
+      droppedFrameRatio: intervals.filter((value) => value > Math.max(25, medianFrameMs * 1.6)).length / intervals.length,
       longTaskCount: longTasks.length,
       longTaskTime: longTasks.reduce((sum, value) => sum + value, 0),
       canvasMegapixels: (canvas.width * canvas.height) / 1_000_000,
@@ -175,7 +185,8 @@ test('busy combat remains inside the interactive frame budget', async ({ page, c
   expect(appReport.snapshot.counters.staticRebuilds.perSecond).toBeLessThanOrEqual(1);
   expect(sample.canvasMegapixels).toBeLessThanOrEqual(2.21);
   if (!stress) {
-    expect(sample.averageFps).toBeGreaterThan(40);
+    expect(sample.averageFps).toBeGreaterThan(28);
+    expect(sample.averageFps).toBeGreaterThan(sample.cadenceFps * 0.82);
     expect(sample.p95FrameMs).toBeLessThanOrEqual(50);
     expect(sample.droppedFrameRatio).toBeLessThan(0.45);
   }

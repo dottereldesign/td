@@ -68,9 +68,10 @@ export class AssetStore {
   private readonly failed = new Set<RenderAssetId>();
   private loadRevision = 0;
 
-  constructor() {
-    for (const [id, url] of Object.entries(ASSET_URLS) as [RenderAssetId, string][]) {
-      const image = new Image();
+  get(id: RenderAssetId): HTMLImageElement | null {
+    let image = this.images.get(id);
+    if (!image && !this.failed.has(id)) {
+      image = new Image();
       image.decoding = 'async';
       image.onload = () => {
         this.failed.delete(id);
@@ -80,13 +81,9 @@ export class AssetStore {
         this.failed.add(id);
         this.loadRevision += 1;
       };
-      image.src = url;
+      image.src = ASSET_URLS[id];
       this.images.set(id, image);
     }
-  }
-
-  get(id: RenderAssetId): HTMLImageElement | null {
-    const image = this.images.get(id);
     if (!image || this.failed.has(id) || !image.complete || image.naturalWidth === 0) return null;
     return image;
   }

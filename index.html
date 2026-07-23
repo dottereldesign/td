@@ -26,6 +26,7 @@
             <button class="resource-chip resource-chip--coins" type="button" data-home-panel="profile"><i data-lucide="coins" aria-hidden="true"></i><strong id="home-coins-value">0</strong><span>+</span></button>
             <button class="resource-chip resource-chip--gems" type="button" data-home-panel="profile"><i data-lucide="gem" aria-hidden="true"></i><strong id="home-gems-value">0</strong><span>+</span></button>
             <button class="home-settings" id="home-settings-button" type="button" aria-label="Settings" aria-haspopup="dialog" data-home-panel="settings"><i data-lucide="settings" aria-hidden="true"></i></button>
+            <button class="home-audio-toggle" id="home-sound-button" type="button" aria-label="Enable music" aria-pressed="false" title="Enable music"><i data-lucide="volume-x" aria-hidden="true"></i></button>
           </div>
         </header>
 
@@ -50,22 +51,22 @@
             </button>
           </section>
 
-          <aside class="home-feature-cards">
-            <button class="home-event-card" type="button" data-home-message="The Mold Invasion summer event is coming soon."><img src="/src/assets/home/panels/summer-event.webp" alt="" /><span><strong>Summer event!</strong><small>Mold invasion</small><b>Double rewards</b></span></button>
-            <button class="home-squad-card" type="button" data-home-panel="profile"><img src="/src/assets/home/panels/squad.webp" alt="" /><span><small><i data-lucide="shield" aria-hidden="true"></i> Squad power</small><strong id="home-power-value">0</strong><b>View squad</b></span></button>
+          <aside class="home-feature-cards" id="home-feature-cards">
+            <button class="home-event-card" type="button" data-home-message="The Mold Invasion summer event is coming soon."><img data-menu-src="/src/assets/home/panels/summer-event.webp" alt="" loading="lazy" decoding="async" /><span><strong>Summer event!</strong><small>Mold invasion</small><b>Double rewards</b></span></button>
+            <button class="home-squad-card" type="button" data-home-panel="profile"><img data-menu-src="/src/assets/home/panels/squad.webp" alt="" loading="lazy" decoding="async" /><span><small><i data-lucide="shield" aria-hidden="true"></i> Squad power</small><strong id="home-power-value">0</strong><b>View squad</b></span></button>
           </aside>
         </main>
 
-        <section class="home-world-grid" aria-label="Learning worlds">
-          <button class="home-world home-world--forest" type="button" data-home-world="forest"><img src="/src/assets/home/worlds/forest.webp" alt="" /><span><strong>Forest World</strong><small>Ecosystems &amp; nature</small><b><i data-lucide="star" aria-hidden="true"></i><em data-home-stars="forest">0</em>/9</b></span></button>
-          <button class="home-world home-world--workshop" type="button" data-home-world="workshop"><img src="/src/assets/home/worlds/workshop.webp" alt="" /><span><strong>Workshop World</strong><small>Machines &amp; cause-effect</small><b><i data-lucide="star" aria-hidden="true"></i><em data-home-stars="workshop">0</em>/9</b></span></button>
-          <button class="home-world home-world--word" type="button" data-home-world="word"><img src="/src/assets/home/worlds/word.webp" alt="" /><span><strong>Word World</strong><small>Literacy &amp; language</small><b><i data-lucide="star" aria-hidden="true"></i><em data-home-stars="word">0</em>/9</b></span></button>
-          <button class="home-world home-world--number" type="button" data-home-world="number"><img src="/src/assets/home/worlds/number.webp" alt="" /><span><strong>Number World</strong><small>Patterns, counting &amp; logic</small><b><i data-lucide="star" aria-hidden="true"></i><em data-home-stars="number">0</em>/9</b></span></button>
-          <button class="home-world home-world--space" type="button" data-home-world="space"><img src="/src/assets/home/worlds/space.webp" alt="" /><span><strong>Space World</strong><small>Planets, gravity &amp; science</small><b><i data-lucide="star" aria-hidden="true"></i><em data-home-stars="space">0</em>/9</b></span></button>
-          <button class="home-world home-world--music" type="button" data-home-world="music"><img src="/src/assets/home/worlds/music.webp" alt="" /><span><strong>Music World</strong><small>Rhythm &amp; sequencing</small><b><i data-lucide="star" aria-hidden="true"></i><em data-home-stars="music">0</em>/9</b></span></button>
+        <section class="home-world-grid" id="home-world-grid" aria-label="Learning worlds">
+          <button class="home-world home-world--forest" type="button" data-home-world="forest"><img data-menu-src="/src/assets/home/worlds/forest.webp" alt="" loading="lazy" decoding="async" /><span><strong>Forest World</strong><small>Ecosystems &amp; nature</small><b><i data-lucide="star" aria-hidden="true"></i><em data-home-stars="forest">0</em>/9</b></span></button>
+          <button class="home-world home-world--workshop" type="button" data-home-world="workshop"><img data-menu-src="/src/assets/home/worlds/workshop.webp" alt="" loading="lazy" decoding="async" /><span><strong>Workshop World</strong><small>Machines &amp; cause-effect</small><b><i data-lucide="star" aria-hidden="true"></i><em data-home-stars="workshop">0</em>/9</b></span></button>
+          <button class="home-world home-world--word" type="button" data-home-world="word"><img data-menu-src="/src/assets/home/worlds/word.webp" alt="" loading="lazy" decoding="async" /><span><strong>Word World</strong><small>Literacy &amp; language</small><b><i data-lucide="star" aria-hidden="true"></i><em data-home-stars="word">0</em>/9</b></span></button>
+          <button class="home-world home-world--number" type="button" data-home-world="number"><img data-menu-src="/src/assets/home/worlds/number.webp" alt="" loading="lazy" decoding="async" /><span><strong>Number World</strong><small>Patterns, counting &amp; logic</small><b><i data-lucide="star" aria-hidden="true"></i><em data-home-stars="number">0</em>/9</b></span></button>
+          <button class="home-world home-world--space" type="button" data-home-world="space"><img data-menu-src="/src/assets/home/worlds/space.webp" alt="" loading="lazy" decoding="async" /><span><strong>Space World</strong><small>Planets, gravity &amp; science</small><b><i data-lucide="star" aria-hidden="true"></i><em data-home-stars="space">0</em>/9</b></span></button>
+          <button class="home-world home-world--music" type="button" data-home-world="music"><img data-menu-src="/src/assets/home/worlds/music.webp" alt="" loading="lazy" decoding="async" /><span><strong>Music World</strong><small>Rhythm &amp; sequencing</small><b><i data-lucide="star" aria-hidden="true"></i><em data-home-stars="music">0</em>/9</b></span></button>
         </section>
 
-        <footer class="home-footer">
+        <footer class="home-footer" id="home-footer">
           <button type="button" data-home-panel="achievements"><i data-lucide="flame" aria-hidden="true"></i><span><small>Streak</small><strong id="home-streak-value">Start today</strong></span></button>
           <button type="button" data-home-panel="leaderboard"><i data-lucide="skull" aria-hidden="true"></i><span><small>Best wave</small><strong id="home-best-wave-value">No waves</strong></span></button>
           <button type="button" data-home-panel="leaderboard" aria-haspopup="dialog"><i data-lucide="trophy" aria-hidden="true"></i><strong>Leaderboards</strong></button>
@@ -85,23 +86,56 @@
             <span class="home-premium-stores" aria-hidden="true">
               <img
                 class="store-badge store-badge--apple"
-                src="/assets/store-badges/download-on-app-store.webp"
+                data-menu-src="/assets/store-badges/download-on-app-store.webp"
                 alt=""
                 width="359"
                 height="120"
+                loading="lazy"
+                decoding="async"
               />
               <img
                 class="store-badge store-badge--google"
-                src="/assets/store-badges/get-it-on-google-play.webp"
+                data-menu-src="/assets/store-badges/get-it-on-google-play.webp"
                 alt=""
                 width="646"
                 height="250"
+                loading="lazy"
+                decoding="async"
               />
             </span>
           </button>
         </footer>
         <div class="home-status" id="home-status" role="status" aria-live="polite"></div>
       </div>
+      <button class="home-menu-button" id="home-menu-button" type="button" aria-label="Open adventure menu" aria-controls="home-mobile-menu" aria-expanded="false">
+        <i data-lucide="menu" aria-hidden="true"></i>
+      </button>
+      <section class="home-mobile-menu" id="home-mobile-menu" role="dialog" aria-modal="true" aria-labelledby="home-mobile-menu-title" aria-hidden="true">
+        <header class="home-mobile-menu-header">
+          <div>
+            <span>WIZINO TD</span>
+            <h2 id="home-mobile-menu-title">Adventure menu</h2>
+          </div>
+          <button class="home-mobile-menu-close" id="home-mobile-menu-close" type="button" aria-label="Close adventure menu"><i data-lucide="x" aria-hidden="true"></i></button>
+        </header>
+        <div class="home-mobile-menu-scroll">
+          <section class="home-mobile-menu-section" aria-labelledby="home-menu-highlights-title">
+            <h3 id="home-menu-highlights-title">Live adventure</h3>
+            <div id="home-menu-features-slot"></div>
+          </section>
+          <section class="home-mobile-menu-section" aria-labelledby="home-menu-progress-title">
+            <h3 id="home-menu-progress-title">Your journey</h3>
+            <div id="home-menu-footer-slot"></div>
+          </section>
+          <section class="home-mobile-menu-section home-mobile-menu-worlds" aria-labelledby="home-menu-worlds-title">
+            <div class="home-mobile-menu-section-heading">
+              <h3 id="home-menu-worlds-title">Learning worlds</h3>
+              <span>Swipe to explore</span>
+            </div>
+            <div id="home-menu-worlds-slot"></div>
+          </section>
+        </div>
+      </section>
     </section>
 
     <div id="app" class="app-shell">

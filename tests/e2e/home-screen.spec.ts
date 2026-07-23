@@ -459,6 +459,7 @@ test('keeps the home dashboard usable on a phone', async ({ page }) => {
   await expect(page.locator('#home-hero')).toHaveAttribute('data-intro-state', 'complete', { timeout: 8_000 });
   await expect(home.locator('[data-home-world]')).toHaveCount(6);
   expect(await home.evaluate((element) => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1);
+  expect(await home.evaluate((element) => element.scrollHeight - element.clientHeight)).toBeLessThanOrEqual(1);
   const quickActionLayout = await home.locator('.home-quick-actions').evaluate((nav) => {
     const navRect = nav.getBoundingClientRect();
     const buttons = [...nav.querySelectorAll<HTMLElement>('.home-quick-button')];
@@ -488,36 +489,33 @@ test('keeps the home dashboard usable on a phone', async ({ page }) => {
   if (process.env.CAPTURE_HOME) {
     await home.locator('.home-quick-actions').screenshot({ path: 'tmp/home-mobile-quick-actions-qa.png' });
   }
-  const premium = home.locator('.home-premium');
-  await premium.scrollIntoViewIfNeeded();
-  const premiumAudioGap = await page.evaluate(() => (
-    document.querySelector<HTMLElement>('.global-audio-toggle')!.getBoundingClientRect().left
-      - document.querySelector<HTMLElement>('.home-premium-stores')!.getBoundingClientRect().right
-  ));
-  expect(premiumAudioGap).toBeGreaterThanOrEqual(6);
-  await page.evaluate(() => window.scrollTo(0, 0));
   const profileDock = page.locator('#home-profile-button');
   const resourceTray = page.locator('#home-resources');
-  const soundButton = page.locator('#sound-button');
+  const globalSoundButton = page.locator('#sound-button');
+  const menuButton = page.locator('#home-menu-button');
   await expect(resourceTray).toBeHidden();
+  await expect(globalSoundButton).toBeHidden();
+  await expect(menuButton).toBeVisible();
   await expect(profileDock).toHaveAttribute('aria-expanded', 'false');
   const closedDockLayout = await page.evaluate(() => {
     const profile = document.querySelector<HTMLElement>('#home-profile-button')!.getBoundingClientRect();
     const xp = document.querySelector<HTMLElement>('.home-xp')!.getBoundingClientRect();
-    const sound = document.querySelector<HTMLElement>('#sound-button')!.getBoundingClientRect();
+    const menu = document.querySelector<HTMLElement>('#home-menu-button')!.getBoundingClientRect();
     return {
       profileBottomGap: window.innerHeight - profile.bottom,
-      profileSoundGap: sound.left - profile.right,
+      profileMenuGap: menu.left - profile.right,
       xpRightInset: profile.right - xp.right,
     };
   });
   expect(closedDockLayout.profileBottomGap).toBeGreaterThanOrEqual(7);
-  expect(closedDockLayout.profileBottomGap).toBeLessThanOrEqual(10);
-  expect(closedDockLayout.profileSoundGap).toBeGreaterThanOrEqual(10);
+  expect(closedDockLayout.profileBottomGap).toBeLessThanOrEqual(12);
+  expect(closedDockLayout.profileMenuGap).toBeGreaterThanOrEqual(8);
   expect(closedDockLayout.xpRightInset).toBeGreaterThanOrEqual(10);
   await profileDock.click();
   await expect(profileDock).toHaveAttribute('aria-expanded', 'true');
   await expect(resourceTray).toBeVisible();
+  const traySoundButton = resourceTray.locator('#home-sound-button');
+  await expect(traySoundButton).toBeVisible();
   await expect(page.locator('#home-panel-modal')).toBeHidden();
   await expect.poll(() => page.evaluate(() => {
     const profile = document.querySelector<HTMLElement>('#home-profile-button')!.getBoundingClientRect();
@@ -531,6 +529,19 @@ test('keeps the home dashboard usable on a phone', async ({ page }) => {
     };
   });
   expect(openDockLayout.horizontalOverflow).toBeLessThanOrEqual(1);
+  const trayControlsLayout = await page.evaluate(() => {
+    const settings = document.querySelector<HTMLElement>('#home-settings-button')!.getBoundingClientRect();
+    const sound = document.querySelector<HTMLElement>('#home-sound-button')!.getBoundingClientRect();
+    return {
+      gap: sound.left - settings.right,
+      topDelta: Math.abs(sound.top - settings.top),
+    };
+  });
+  expect(trayControlsLayout.gap).toBeGreaterThanOrEqual(4);
+  expect(trayControlsLayout.topDelta).toBeLessThanOrEqual(1);
+  await traySoundButton.click();
+  await expect(traySoundButton).toHaveAttribute('aria-pressed', 'true');
+  await expect(globalSoundButton).toHaveAttribute('aria-pressed', 'true');
   if (process.env.CAPTURE_HOME) {
     await page.screenshot({ path: 'tmp/home-mobile-profile-tray-qa.png', fullPage: true });
   }
@@ -548,5 +559,57 @@ test('keeps the home dashboard usable on a phone', async ({ page }) => {
   expect(closeBounds).not.toBeNull();
   expect(closeBounds!.x).toBeGreaterThanOrEqual(settingsBounds!.x);
   expect(closeBounds!.x + closeBounds!.width).toBeLessThanOrEqual(settingsBounds!.x + settingsBounds!.width);
-  await expect(soundButton).toHaveCSS('opacity', '0');
+  await expect(globalSoundButton).toBeHidden();
+});
+
+test('uses the full-page adventure menu on phone and tablet layouts', async ({ page }) => {
+  await page.setViewportSize({ width: 820, height: 1180 });
+  await page.goto('/');
+
+  const home = page.locator('#home-screen');
+  const menu = page.locator('#home-mobile-menu');
+  const menuButton = page.locator('#home-menu-button');
+  await expect(page.locator('#home-hero')).toHaveAttribute('data-intro-state', 'complete', { timeout: 8_000 });
+  await expect(menu).toBeHidden();
+  await expect(home.locator('.home-feature-cards')).toBeHidden();
+  await expect(home.locator('.home-footer')).toBeHidden();
+  await expect(home.locator('.home-world-grid')).toBeHidden();
+  expect(await home.evaluate((element) => element.scrollHeight - element.clientHeight)).toBeLessThanOrEqual(1);
+
+  await menuButton.click();
+  await expect(menuButton).toHaveAttribute('aria-expanded', 'true');
+  await expect(menu).toBeVisible();
+  await expect(menu.getByRole('heading', { name: 'Adventure menu' })).toBeVisible();
+  await expect(menu.locator('.home-feature-cards')).toBeVisible();
+  await expect(menu.locator('.home-feature-cards > button')).toHaveCount(2);
+  await expect(menu.locator('.home-footer > button')).toHaveCount(5);
+  await expect(menu.locator('.home-premium')).toContainText('Get premium!');
+  await expect(menu.locator('.home-world')).toHaveCount(6);
+
+  const menuLayout = await menu.evaluate((element) => {
+    const worldGrid = element.querySelector<HTMLElement>('.home-world-grid')!;
+    const firstWorld = worldGrid.querySelector<HTMLElement>('.home-world')!;
+    const footer = element.querySelector<HTMLElement>('.home-footer')!;
+    const gridRect = worldGrid.getBoundingClientRect();
+    const firstWorldRect = firstWorld.getBoundingClientRect();
+    return {
+      horizontalOverflow: element.scrollWidth - element.clientWidth,
+      worldFlow: getComputedStyle(worldGrid).gridAutoFlow,
+      worldsScrollable: worldGrid.scrollWidth > worldGrid.clientWidth,
+      footerColumns: getComputedStyle(footer).gridTemplateColumns.split(' ').length,
+      firstWorldInsideRail: firstWorldRect.left >= gridRect.left && firstWorldRect.right <= gridRect.right,
+    };
+  });
+  expect(menuLayout.horizontalOverflow).toBeLessThanOrEqual(1);
+  expect(menuLayout.worldFlow).toBe('column');
+  expect(menuLayout.worldsScrollable).toBe(true);
+  expect(menuLayout.footerColumns).toBe(2);
+  expect(menuLayout.firstWorldInsideRail).toBe(true);
+  if (process.env.CAPTURE_HOME) {
+    await page.screenshot({ path: 'tmp/home-tablet-adventure-menu-qa.png', fullPage: true });
+  }
+
+  await menu.getByRole('button', { name: 'Close adventure menu' }).click();
+  await expect(menu).toBeHidden();
+  await expect(menuButton).toHaveAttribute('aria-expanded', 'false');
 });

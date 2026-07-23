@@ -72,12 +72,18 @@ export class UI {
   private readonly homeTopbar = this.element('home-topbar');
   private readonly homeProfileButton = this.button('home-profile-button');
   private readonly homeResources = this.element('home-resources');
+  private readonly homeFeatureCards = this.element('home-feature-cards');
+  private readonly homeWorldGrid = this.element('home-world-grid');
+  private readonly homeFooter = this.element('home-footer');
+  private readonly homeMenuButton = this.button('home-menu-button');
+  private readonly homeMobileMenu = this.element('home-mobile-menu');
   private readonly homeHero = this.element('home-hero');
   private readonly homeStatus = this.element('home-status');
   private readonly homePanelModal = this.element('home-panel-modal');
   private readonly homePanelContent = this.element('home-panel-content');
   private readonly toastRegion = this.element('toast-region');
-  private readonly mobileHomeMedia = window.matchMedia('(max-width: 520px)');
+  private readonly mobileHomeMedia = window.matchMedia('(max-width: 1024px)');
+  private compactHomeSections: Array<{ section: HTMLElement; slot: HTMLElement; anchor: Comment }> = [];
 
   constructor(
     private readonly game: Game,
@@ -91,11 +97,10 @@ export class UI {
     this.selectedLevelId = game.level.id;
     this.progress = loadPlayerProgress();
     this.soundMuted = initialMuted;
+    this.prepareCompactHomeLayout();
+    this.syncCompactHomeLayout();
     this.applyAudioSettings();
     this.applySettings();
-    this.renderTowerShop();
-    this.renderWorldGrid();
-    this.renderLevelGrid();
     this.renderDamageMatrix();
     this.bindControls();
     this.setMobileResourcesExpanded(false);
@@ -251,6 +256,7 @@ export class UI {
     this.levelModal.classList.remove('is-open');
     this.homeScreen.classList.add('is-open');
     this.setMobileResourcesExpanded(false);
+    this.setCompactMenuOpen(false);
     this.updateHomeProgress();
     if (updateRoute) this.pushRoute('#/home');
   }
@@ -278,6 +284,10 @@ export class UI {
     return document.querySelector('.modal-backdrop.is-open') !== null || this.levelModal.classList.contains('is-open');
   }
 
+  shouldSuspendGameLoop(): boolean {
+    return this.homeScreen.classList.contains('is-open') || this.levelModal.classList.contains('is-open');
+  }
+
   closeTopModal(): boolean {
     if (this.homePanelModal.classList.contains('is-open')) {
       this.homePanelModal.classList.remove('is-open');
@@ -291,6 +301,10 @@ export class UI {
       if (!this.mapSelectView.hidden) this.showWorldSelect();
       else if (this.levelModalOpenedFromGame) this.levelModal.classList.remove('is-open');
       else this.showHome();
+      return true;
+    }
+    if (this.homeMobileMenu.classList.contains('is-open')) {
+      this.setCompactMenuOpen(false);
       return true;
     }
     if (this.homeTopbar.classList.contains('is-resources-open')) {
@@ -314,6 +328,51 @@ export class UI {
     }
   }
 
+  private prepareCompactHomeLayout(): void {
+    const sections = [
+      { section: this.homeFeatureCards, slot: this.element('home-menu-features-slot') },
+      { section: this.homeFooter, slot: this.element('home-menu-footer-slot') },
+      { section: this.homeWorldGrid, slot: this.element('home-menu-worlds-slot') },
+    ];
+    this.compactHomeSections = sections.map(({ section, slot }) => {
+      const anchor = document.createComment(`${section.id}-desktop-anchor`);
+      section.before(anchor);
+      return { section, slot, anchor };
+    });
+  }
+
+  private syncCompactHomeLayout(): void {
+    if (this.mobileHomeMedia.matches) {
+      for (const { section, slot } of this.compactHomeSections) slot.append(section);
+    } else {
+      for (const { section, anchor } of this.compactHomeSections) anchor.after(section);
+      this.hydrateHomeMenuMedia();
+    }
+    this.setMobileResourcesExpanded(false);
+    this.setCompactMenuOpen(false);
+  }
+
+  private hydrateHomeMenuMedia(): void {
+    this.homeScreen.querySelectorAll<HTMLImageElement>('img[data-menu-src]').forEach((image) => {
+      const source = image.dataset.menuSrc;
+      if (!source) return;
+      image.src = source;
+      image.removeAttribute('data-menu-src');
+    });
+  }
+
+  private setCompactMenuOpen(open: boolean): void {
+    const expanded = this.mobileHomeMedia.matches && open;
+    if (expanded) this.hydrateHomeMenuMedia();
+    this.homeMobileMenu.classList.toggle('is-open', expanded);
+    this.homeMobileMenu.setAttribute('aria-hidden', String(!expanded));
+    this.homeMenuButton.setAttribute('aria-expanded', String(expanded));
+    this.homeMenuButton.setAttribute('aria-label', expanded ? 'Close adventure menu' : 'Open adventure menu');
+    this.homeMenuButton.innerHTML = `<i data-lucide="${expanded ? 'x' : 'menu'}" aria-hidden="true"></i>`;
+    if (expanded) this.setMobileResourcesExpanded(false);
+    refreshIcons();
+  }
+
   private bindControls(): void {
     const openAdventure = () => {
       this.homeScreen.classList.remove('is-open');
@@ -335,7 +394,11 @@ export class UI {
       this.homeHero.dataset.introState = 'complete';
       this.homeScreen.dataset.introState = 'complete';
     }
-    this.mobileHomeMedia.addEventListener('change', () => this.setMobileResourcesExpanded(false));
+    this.mobileHomeMedia.addEventListener('change', () => this.syncCompactHomeLayout());
+    this.homeMenuButton.addEventListener('click', () => {
+      this.setCompactMenuOpen(!this.homeMobileMenu.classList.contains('is-open'));
+    });
+    this.button('home-mobile-menu-close').addEventListener('click', () => this.setCompactMenuOpen(false));
     this.homeScreen.addEventListener('click', (event) => {
       const target = event.target as HTMLElement;
       const profileButton = target.closest<HTMLButtonElement>('#home-profile-button');
@@ -352,6 +415,7 @@ export class UI {
         const worldId = worldButton.dataset.homeWorld as WorldId;
         if (!this.isWorldUnlocked(worldId)) return;
         this.homeScreen.classList.remove('is-open');
+        this.setCompactMenuOpen(false);
         this.levelModalOpenedFromGame = false;
         this.showMapSelect(worldId);
         this.levelModal.classList.add('is-open');
@@ -361,12 +425,14 @@ export class UI {
       const panelButton = target.closest<HTMLButtonElement>('[data-home-panel]');
       if (panelButton?.dataset.homePanel) {
         this.setMobileResourcesExpanded(false);
+        this.setCompactMenuOpen(false);
         this.openHomePanel(panelButton.dataset.homePanel);
         return;
       }
 
       const messageButton = target.closest<HTMLButtonElement>('[data-home-message]');
       if (!messageButton?.dataset.homeMessage) return;
+      this.setCompactMenuOpen(false);
       this.homeStatus.textContent = messageButton.dataset.homeMessage;
       this.homeStatus.classList.remove('is-visible');
       window.requestAnimationFrame(() => this.homeStatus.classList.add('is-visible'));
@@ -419,10 +485,19 @@ export class UI {
     this.button('selected-map-play').addEventListener('click', () => this.deployLevel(this.selectedLevelId));
     this.button('help-button').addEventListener('click', () => this.toggleHelp(true));
     this.button('help-close-button').addEventListener('click', () => this.toggleHelp(false));
-    this.button('sound-button').addEventListener('click', () => {
-      this.setMobileResourcesExpanded(false);
+    const toggleSound = () => {
       this.soundMuted = this.onSoundToggle();
       this.updateSoundButton(this.soundMuted);
+    };
+    this.button('sound-button').addEventListener('click', () => {
+      this.setMobileResourcesExpanded(false);
+      toggleSound();
+    });
+    this.button('home-sound-button').addEventListener('click', (event) => {
+      // The icon is replaced while its click is bubbling. Stop here so the
+      // detached icon cannot be mistaken for an outside-tray click.
+      event.stopPropagation();
+      toggleSound();
     });
     this.button('home-panel-close').addEventListener('click', () => this.homePanelModal.classList.remove('is-open'));
     this.homePanelModal.addEventListener('click', (event) => {
@@ -807,11 +882,13 @@ export class UI {
   }
 
   private updateSoundButton(muted: boolean): void {
-    const button = this.button('sound-button');
-    button.innerHTML = `<i data-lucide="${muted ? 'volume-x' : 'volume-2'}" aria-hidden="true"></i>`;
-    button.setAttribute('aria-label', muted ? 'Enable music' : 'Mute music');
-    button.setAttribute('aria-pressed', String(!muted));
-    button.title = muted ? 'Enable music' : 'Mute music';
+    for (const id of ['sound-button', 'home-sound-button']) {
+      const button = this.button(id);
+      button.innerHTML = `<i data-lucide="${muted ? 'volume-x' : 'volume-2'}" aria-hidden="true"></i>`;
+      button.setAttribute('aria-label', muted ? 'Enable music' : 'Mute music');
+      button.setAttribute('aria-pressed', String(!muted));
+      button.title = muted ? 'Enable music' : 'Mute music';
+    }
     refreshIcons();
   }
 
