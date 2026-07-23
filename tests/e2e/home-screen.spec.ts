@@ -127,7 +127,7 @@ test('persists guest settings and daily rewards in local browser storage', async
   await expect(page.locator('#home-gems-value')).toHaveText('5');
 });
 
-test('keeps the lightweight music loop muted until the player enables it', async ({ page }) => {
+test('keeps music muted while home-screen effects remain audible', async ({ page }) => {
   await page.setViewportSize({ width: 1512, height: 1008 });
   await page.goto('/');
 

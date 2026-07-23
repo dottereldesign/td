@@ -7,15 +7,23 @@ export interface AudioChannels {
   effectsEnabled: boolean;
 }
 
-const UI_SOUND_URLS: Record<UiSound, string> = {
-  click: '/audio/ui/click.ogg',
-  card: '/audio/ui/card.ogg',
-  confirm: '/audio/ui/confirm.ogg',
-  toggle: '/audio/ui/toggle.ogg',
-  back: '/audio/ui/back.ogg',
-  open: '/audio/ui/open.ogg',
-  tower: '/audio/ui/tower.ogg',
+const UI_SOUND_FILES: Record<UiSound, string> = {
+  click: 'click.ogg',
+  card: 'card.ogg',
+  confirm: 'confirm.ogg',
+  toggle: 'toggle.ogg',
+  back: 'back.ogg',
+  open: 'open.ogg',
+  tower: 'tower.ogg',
 };
+
+export function resolveUiSoundUrl(
+  sound: UiSound,
+  pageBase = document.baseURI,
+  appBase = './',
+): string {
+  return new URL(`${appBase}audio/ui/${UI_SOUND_FILES[sound]}`, pageBase).href;
+}
 
 export class AudioEngine {
   muted: boolean;
@@ -71,6 +79,7 @@ export class AudioEngine {
     }
     void this.loadEffect(sound).then((loaded) => {
       if (loaded && this.effectsEnabled) this.playBuffer(sound, loaded);
+      else if (this.effectsEnabled) this.playFallback(sound);
     });
   }
 
@@ -131,7 +140,7 @@ export class AudioEngine {
   }
 
   private async preloadEffects(): Promise<void> {
-    await Promise.all((Object.keys(UI_SOUND_URLS) as UiSound[]).map((sound) => this.loadEffect(sound)));
+    await Promise.all((Object.keys(UI_SOUND_FILES) as UiSound[]).map((sound) => this.loadEffect(sound)));
   }
 
   private loadEffect(sound: UiSound): Promise<AudioBuffer | null> {
@@ -141,7 +150,7 @@ export class AudioEngine {
     if (pending) return pending;
     if (!this.context) return Promise.resolve(null);
 
-    const load = fetch(UI_SOUND_URLS[sound])
+    const load = fetch(resolveUiSoundUrl(sound))
       .then((response) => {
         if (!response.ok) throw new Error(`Unable to load ${sound} sound.`);
         return response.arrayBuffer();
@@ -166,6 +175,21 @@ export class AudioEngine {
     source.connect(gain);
     gain.connect(this.context.destination);
     source.start();
+    this.effectPlays += 1;
+    this.lastEffect = sound;
+  }
+
+  private playFallback(sound: UiSound): void {
+    const frequencies: Record<UiSound, number[]> = {
+      click: [520],
+      card: [390, 520],
+      confirm: [440, 660],
+      toggle: [480, 580],
+      back: [430, 310],
+      open: [360, 480],
+      tower: [260, 390],
+    };
+    this.sequence(frequencies[sound], 0.045, 0.055);
     this.effectPlays += 1;
     this.lastEffect = sound;
   }
