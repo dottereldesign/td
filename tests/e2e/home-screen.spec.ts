@@ -350,15 +350,18 @@ test('play opens the locked hex world-selection page', async ({ page }) => {
     const cards = [...grid.querySelectorAll<HTMLElement>('[data-world]')];
     const forest = cards[0];
     const forestStyle = getComputedStyle(forest);
+    const forestCopyStyle = getComputedStyle(forest.querySelector<HTMLElement>('.selection-world-copy')!);
     return {
       columns: new Set(cards.map((card) => Math.round(card.getBoundingClientRect().x))).size,
       rows: new Set(cards.map((card) => getComputedStyle(card).gridRowStart)).size,
       usesHexShape: forestStyle.clipPath.includes('polygon'),
+      overlayReachesBottomPoint: forestCopyStyle.bottom === '0px',
     };
   });
   expect(layout.columns).toBe(6);
   expect(layout.rows).toBe(2);
   expect(layout.usesHexShape).toBe(true);
+  expect(layout.overlayReachesBottomPoint).toBe(true);
 
   if (process.env.CAPTURE_HOME) {
     await page.screenshot({ path: 'tmp/world-select-page-qa.png', fullPage: true });
