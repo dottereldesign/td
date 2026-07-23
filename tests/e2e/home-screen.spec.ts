@@ -21,6 +21,7 @@ test('renders the illustrated home dashboard and opens a world', async ({ page }
   await expect(page.locator('#home-best-wave-value')).toHaveText('No waves');
   await expect(home.locator('.home-quick-button')).toHaveCount(4);
   await expect(home.locator('[data-home-world]')).toHaveCount(6);
+  await expect(home.locator('.home-world-heading')).toHaveCount(0);
   const premium = home.locator('.home-premium');
   await expect(premium).toContainText('Get premium!');
   await expect(premium).toContainText('Unlock the full game on mobile');
@@ -156,7 +157,6 @@ test('stages the home hero and lets the arrow play the alternate intro', async (
         '.home-resources > button',
         '.home-quick-button',
         '.home-feature-cards > button',
-        '.home-world-heading',
         '.home-world',
         '.home-footer > button',
       ].map(animation),

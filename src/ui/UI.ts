@@ -793,8 +793,6 @@ export class UI {
   }
 
   private updateHomeProgress(): void {
-    const total = Object.values(this.progress.stars).reduce((sum, stars) => sum + stars, 0);
-    this.element('home-star-total').textContent = String(total);
     this.element('home-player-name').textContent = this.progress.name;
     this.element('home-player-level').textContent = String(this.progress.level);
     this.element('home-energy-value').textContent = `${this.progress.energy}/100`;
