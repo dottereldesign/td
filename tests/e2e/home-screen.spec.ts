@@ -34,7 +34,12 @@ test('renders the illustrated home dashboard and opens a world', async ({ page }
     const footer = element.querySelector<HTMLElement>('.home-footer')!;
     return {
       allImagesLoaded: images.every((image) => image.complete && image.naturalWidth >= 100),
-      allButtonsUsePointerCursor: buttons.every((button) => getComputedStyle(button).cursor === 'pointer'),
+      allEnabledButtonsUsePointerCursor: buttons
+        .filter((button) => !button.disabled)
+        .every((button) => getComputedStyle(button).cursor === 'pointer'),
+      allDisabledButtonsAvoidPointerCursor: buttons
+        .filter((button) => button.disabled)
+        .every((button) => getComputedStyle(button).cursor !== 'pointer'),
       allButtonsAnimate: buttons.every((button) => getComputedStyle(button).transitionDuration !== '0s'),
       horizontalOverflow: element.scrollWidth - element.clientWidth,
       footerBottom: footer.getBoundingClientRect().bottom,
@@ -50,7 +55,8 @@ test('renders the illustrated home dashboard and opens a world', async ({ page }
   });
 
   expect(layout.allImagesLoaded).toBe(true);
-  expect(layout.allButtonsUsePointerCursor).toBe(true);
+  expect(layout.allEnabledButtonsUsePointerCursor).toBe(true);
+  expect(layout.allDisabledButtonsAvoidPointerCursor).toBe(true);
   expect(layout.allButtonsAnimate).toBe(true);
   expect(layout.horizontalOverflow).toBeLessThanOrEqual(1);
   expect(layout.footerBottom).toBeLessThanOrEqual(1008);
@@ -77,7 +83,7 @@ test('renders the illustrated home dashboard and opens a world', async ({ page }
     await page.screenshot({ path: 'tmp/home-screen-qa.png', fullPage: true });
   }
 
-  await page.getByRole('button', { name: /Forest World/i }).click();
+  await page.locator('[data-home-world="forest"]').click();
   await expect(page.getByRole('heading', { name: 'Forest World' })).toBeVisible();
   await expect(page.locator('#world-grid')).toBeHidden();
   await expect(page.locator('#level-grid')).toBeVisible();
@@ -223,8 +229,9 @@ test('keeps music muted while home-screen effects remain audible', async ({ page
   await expect(page.getByRole('button', { name: 'Mute music' })).toBeVisible();
   await expect.poll(() => music.evaluate((audio: HTMLAudioElement) => audio.paused)).toBe(false);
   await expect.poll(() => page.evaluate(() => window.__WIZINO_TD__.audio.getDiagnostics().lastEffect)).toBe('confirm');
-  await page.getByRole('button', { name: /Forest World/i }).click();
+  await page.locator('[data-world="forest"]').click();
   await expect.poll(() => page.evaluate(() => window.__WIZINO_TD__.audio.getDiagnostics().lastEffect)).toBe('card');
+  await page.getByRole('button', { name: /View maps/i }).click();
 
   await page.getByRole('button', { name: 'Mute music' }).click();
   await expect(page.getByRole('button', { name: 'Enable music' })).toHaveAttribute('aria-pressed', 'false');
@@ -316,17 +323,23 @@ test('uses TCG proportions and a swipeable collection rail on mobile', async ({ 
   expect(layout.snap).toContain('x');
 });
 
-test('play opens a dedicated three-by-two world page', async ({ page }) => {
+test('play opens the locked hex world-selection page', async ({ page }) => {
   await page.setViewportSize({ width: 1512, height: 1008 });
   await page.goto('/');
   await page.getByRole('button', { name: 'Start adventure' }).click();
 
   const selection = page.locator('#level-modal');
   await expect(selection).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Where will you explore?' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Select a world' })).toBeVisible();
   await expect(selection).not.toHaveAttribute('role', 'dialog');
   await expect(selection.locator('[data-world]')).toHaveCount(6);
   await expect(selection.locator('.selection-world-art')).toHaveCount(6);
+  await expect(selection.locator('[data-world]:enabled')).toHaveCount(1);
+  await expect(selection.locator('[data-world]:disabled')).toHaveCount(5);
+  await expect(selection.locator('[data-world="forest"]')).toHaveClass(/is-selected/);
+  await expect(selection.locator('#world-detail-name')).toHaveText('Forest World');
+  await expect(selection.locator('#world-complete-value')).toHaveText('0 / 6');
+  await expect(selection.locator('#world-map-progress')).toHaveText('0 / 3 maps cleared');
   expect(await selection.locator('.selection-world-art').evaluateAll((images) => images.every((image) => {
     const artwork = image as HTMLImageElement;
     return artwork.complete && artwork.naturalWidth >= 100 && artwork.naturalHeight >= 100;
@@ -334,24 +347,52 @@ test('play opens a dedicated three-by-two world page', async ({ page }) => {
   await expect(page).toHaveURL(/#\/worlds$/);
 
   const layout = await selection.locator('#world-grid').evaluate((grid) => {
-    const style = getComputedStyle(grid);
+    const cards = [...grid.querySelectorAll<HTMLElement>('[data-world]')];
+    const forest = cards[0];
+    const forestStyle = getComputedStyle(forest);
     return {
-      columns: style.gridTemplateColumns.split(' ').length,
-      rows: style.gridTemplateRows.split(' ').length,
+      columns: new Set(cards.map((card) => Math.round(card.getBoundingClientRect().x))).size,
+      rows: new Set(cards.map((card) => getComputedStyle(card).gridRowStart)).size,
+      usesHexShape: forestStyle.clipPath.includes('polygon'),
     };
   });
-  expect(layout).toEqual({ columns: 3, rows: 2 });
+  expect(layout.columns).toBe(6);
+  expect(layout.rows).toBe(2);
+  expect(layout.usesHexShape).toBe(true);
 
   if (process.env.CAPTURE_HOME) {
     await page.screenshot({ path: 'tmp/world-select-page-qa.png', fullPage: true });
   }
 
-  await page.getByRole('button', { name: /Workshop World/i }).click();
-  await expect(page.getByRole('heading', { name: 'Workshop World' })).toBeVisible();
+  await selection.locator('[data-world="forest"]').click();
+  await page.getByRole('button', { name: /View maps/i }).click();
+  await expect(page.getByRole('heading', { name: 'Forest World' })).toBeVisible();
+  await expect(selection.locator('[data-level]')).toHaveCount(3);
+  await expect(page).toHaveURL(/#\/worlds\/forest\/levels$/);
   await page.goBack();
-  await expect(page.getByRole('heading', { name: 'Where will you explore?' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Select a world' })).toBeVisible();
   await page.goBack();
   await expect(page.getByRole('heading', { name: 'Wizino TD' })).toBeVisible();
+});
+
+test('unlocks worlds in sequence after the previous world is complete', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('wizino-td-player-v1', JSON.stringify({
+      version: 1,
+      stars: { 'forest-1': 1, 'forest-2': 2, 'forest-3': 3 },
+    }));
+  });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Start adventure' }).click();
+
+  const selection = page.locator('#level-modal');
+  await expect(selection.locator('[data-world]:enabled')).toHaveCount(2);
+  await expect(selection.locator('[data-world="word"]')).toBeDisabled();
+  await selection.locator('[data-world="workshop"]').click();
+  await expect(selection.locator('#world-detail-name')).toHaveText('Workshop World');
+  await expect(selection.locator('#world-complete-value')).toHaveText('1 / 6');
+  await page.getByRole('button', { name: /View maps/i }).click();
+  await expect(page.getByRole('heading', { name: 'Workshop World' })).toBeVisible();
 });
 
 test('keeps the home dashboard usable on a phone', async ({ page }) => {

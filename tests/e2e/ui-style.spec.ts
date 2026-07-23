@@ -3,7 +3,8 @@ import { expect, test } from '@playwright/test';
 test('renders the Forest tower shop without broken art or overlap', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: /Start adventure/i }).click();
-  await page.getByRole('button', { name: /Forest World/i }).click();
+  await page.locator('[data-world="forest"]').click();
+  await page.getByRole('button', { name: /View maps/i }).click();
   await page.getByRole('button', { name: /Play Mossy Crossing/i }).click();
 
   const shop = page.locator('#tower-shop');

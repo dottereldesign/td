@@ -226,26 +226,62 @@
       </section>
     </div>
 
-    <section class="selection-screen" id="level-modal" aria-labelledby="level-modal-title">
+    <section class="selection-screen" id="level-modal" aria-label="World and map selection">
       <div class="selection-shell">
-        <div class="selection-topline"><span>WIZINO TD / LEARNING ADVENTURE</span><span>18 MAPS · 6 WORLDS</span></div>
-        <div class="selection-heading">
-          <div>
-            <span class="eyebrow" id="select-eyebrow">CHOOSE A LEARNING WORLD</span>
-            <h2 id="level-modal-title">Where will you explore?</h2>
-            <p id="select-copy">Each world has three maps, six themed towers, and a different family of ideas to discover.</p>
+        <section class="world-select-view" id="world-select-view">
+          <header class="world-select-header">
+            <div>
+              <span>WIZINO TD · LEARNING ADVENTURE</span>
+              <h2 id="world-select-title">Select a world</h2>
+              <p>Learn. Build. Defend.</p>
+            </div>
+            <div class="world-select-resources" aria-label="Player resources">
+              <span class="world-resource world-resource--energy"><i data-lucide="zap" aria-hidden="true"></i><strong id="selection-energy-value">0/100</strong></span>
+              <span class="world-resource world-resource--coins"><i data-lucide="coins" aria-hidden="true"></i><strong id="selection-coins-value">0</strong></span>
+              <span class="world-resource world-resource--gems"><i data-lucide="gem" aria-hidden="true"></i><strong id="selection-gems-value">0</strong></span>
+              <button class="world-settings-button" id="selection-settings-button" type="button" aria-label="Settings"><i data-lucide="settings" aria-hidden="true"></i></button>
+            </div>
+          </header>
+
+          <div class="world-select-layout">
+            <aside class="world-detail-panel" aria-live="polite">
+              <span class="world-detail-icon" id="world-detail-icon" aria-hidden="true"><i data-lucide="trees"></i></span>
+              <span class="world-detail-number" id="world-detail-number">WORLD 01</span>
+              <h3 id="world-detail-name">Forest World</h3>
+              <strong id="world-detail-theme">Ecosystems and nature</strong>
+              <p id="world-detail-description">Grow a living defence and learn how woodland systems support one another.</p>
+              <div class="world-detail-progress">
+                <span><small>Worlds completed</small><b id="world-complete-value">0 / 6</b></span>
+                <span class="world-progress-track"><i id="world-progress-fill" style="--progress:0%"></i></span>
+                <em id="world-map-progress">0 / 3 maps cleared</em>
+              </div>
+              <button class="world-view-maps" id="world-view-maps-button" type="button">View maps <i data-lucide="arrow-right" aria-hidden="true"></i></button>
+              <button class="world-back-home" id="selection-home-button" type="button"><i data-lucide="house" aria-hidden="true"></i> Back home</button>
+            </aside>
+
+            <div id="world-grid" class="world-grid" aria-label="Learning worlds"></div>
           </div>
-          <div class="selection-emblem" aria-hidden="true">WT</div>
-        </div>
-        <div id="world-grid" class="world-grid"></div>
-        <div id="level-grid" class="level-grid" hidden></div>
-        <div class="selection-footer">
-          <div class="selection-nav">
-            <button class="button button--ghost" id="selection-home-button" type="button">Home</button>
-            <button class="button button--ghost" id="world-back-button" type="button" hidden>All worlds</button>
+        </section>
+
+        <section class="map-select-view" id="map-select-view" hidden>
+          <div class="selection-topline"><span>WIZINO TD / LEARNING ADVENTURE</span><span>18 MAPS · 6 WORLDS</span></div>
+          <div class="selection-heading">
+            <div>
+              <span class="eyebrow" id="select-eyebrow">ECOSYSTEMS AND NATURE</span>
+              <h2 id="level-modal-title">Forest World</h2>
+              <p id="select-copy">Select a map to deploy immediately.</p>
+            </div>
+            <div class="selection-emblem" aria-hidden="true">WT</div>
           </div>
-          <span><i data-lucide="mouse-pointer-2" aria-hidden="true"></i><span id="selection-hint">Choose a world, then select a map.</span></span>
-        </div>
+          <div id="level-grid" class="level-grid"></div>
+          <div class="selection-footer">
+            <div class="selection-nav">
+              <button class="button button--ghost" id="selection-map-home-button" type="button">Home</button>
+              <button class="button button--ghost" id="world-back-button" type="button">All worlds</button>
+            </div>
+            <span><i data-lucide="mouse-pointer-2" aria-hidden="true"></i><span id="selection-hint">Select a map to deploy immediately.</span></span>
+          </div>
+        </section>
       </div>
     </section>
 

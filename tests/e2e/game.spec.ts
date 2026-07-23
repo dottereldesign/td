@@ -2,15 +2,23 @@ import { expect, test, type Page } from '@playwright/test';
 
 async function enterForest(page: Page): Promise<void> {
   await page.getByRole('button', { name: /Start adventure/i }).click();
-  await page.getByRole('button', { name: /Forest World/i }).click();
+  await page.locator('[data-world="forest"]').click();
+  await page.getByRole('button', { name: /View maps/i }).click();
   await page.getByRole('button', { name: /Play Mossy Crossing/i }).click();
 }
 
 test('navigates six worlds and loads a world-specific roster', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('wizino-td-player-v1', JSON.stringify({
+      version: 1,
+      stars: { 'forest-1': 1, 'forest-2': 1, 'forest-3': 1 },
+    }));
+  });
   await page.goto('/');
   await page.getByRole('button', { name: /Start adventure/i }).click();
   await expect(page.locator('[data-world]')).toHaveCount(6);
-  await page.getByRole('button', { name: /Workshop World/i }).click();
+  await page.locator('[data-world="workshop"]').click();
+  await page.getByRole('button', { name: /View maps/i }).click();
   await expect(page.locator('[data-level]')).toHaveCount(3);
   await page.getByRole('button', { name: /Play Cogworks Entry/i }).click();
   await expect(page.getByRole('button', { name: /Gearbox Turret/i })).toBeVisible();

@@ -61,6 +61,8 @@ export class UI {
   private readonly upgradeButton = this.button('upgrade-button');
   private readonly sellButton = this.button('sell-button');
   private readonly levelModal = this.element('level-modal');
+  private readonly worldSelectView = this.element('world-select-view');
+  private readonly mapSelectView = this.element('map-select-view');
   private readonly helpModal = this.element('help-modal');
   private readonly outcomeModal = this.element('outcome-modal');
   private readonly levelGrid = this.element('level-grid');
@@ -175,29 +177,64 @@ export class UI {
   }
 
   private showWorldSelect(updateRoute = true): void {
-    this.worldGrid.hidden = false;
-    this.levelGrid.hidden = true;
-    this.button('world-back-button').hidden = true;
-    this.element('select-eyebrow').textContent = 'CHOOSE A LEARNING WORLD';
-    this.element('level-modal-title').textContent = 'Where will you explore?';
-    this.element('select-copy').textContent = 'Each world has three maps, six themed towers, and a different family of ideas to discover.';
-    this.element('selection-hint').textContent = 'Choose a world, then select a map.';
+    if (!this.isWorldUnlocked(this.selectedWorldId)) this.selectedWorldId = WORLDS[0].id;
+    this.levelModal.dataset.selectionView = 'worlds';
+    this.worldSelectView.hidden = false;
+    this.mapSelectView.hidden = true;
     this.renderWorldGrid();
+    this.renderWorldDetail();
     if (updateRoute) this.pushRoute('#/worlds');
   }
 
   private showMapSelect(worldId: WorldId, updateRoute = true): void {
+    if (!this.isWorldUnlocked(worldId)) {
+      this.selectedWorldId = WORLDS[0].id;
+      this.showWorldSelect(false);
+      window.history.replaceState({}, '', '#/worlds');
+      return;
+    }
     this.selectedWorldId = worldId;
     const world = getWorld(worldId);
-    this.worldGrid.hidden = true;
-    this.levelGrid.hidden = false;
-    this.button('world-back-button').hidden = false;
+    this.levelModal.dataset.selectionView = 'maps';
+    this.worldSelectView.hidden = true;
+    this.mapSelectView.hidden = false;
     this.element('select-eyebrow').textContent = world.theme.toUpperCase();
     this.element('level-modal-title').textContent = world.name;
     this.element('select-copy').textContent = `${world.description} Select a map to deploy immediately.`;
     this.element('selection-hint').textContent = 'Select a map to deploy immediately.';
     this.renderLevelGrid();
     if (updateRoute) this.pushRoute(`#/worlds/${worldId}/levels`);
+  }
+
+  private isWorldComplete(worldId: WorldId): boolean {
+    return getWorld(worldId).mapIds.every((levelId) => (this.progress.stars[levelId] ?? 0) > 0);
+  }
+
+  private isWorldUnlocked(worldId: WorldId): boolean {
+    const index = WORLDS.findIndex((world) => world.id === worldId);
+    return index <= 0 || this.isWorldComplete(WORLDS[index - 1].id);
+  }
+
+  private selectWorld(worldId: WorldId): void {
+    if (!this.isWorldUnlocked(worldId)) return;
+    this.selectedWorldId = worldId;
+    this.renderWorldGrid();
+    this.renderWorldDetail();
+  }
+
+  private renderWorldDetail(): void {
+    const world = getWorld(this.selectedWorldId);
+    const clearedMaps = world.mapIds.filter((levelId) => (this.progress.stars[levelId] ?? 0) > 0).length;
+    const completedWorlds = WORLDS.filter((entry) => this.isWorldComplete(entry.id)).length;
+    this.element('world-detail-icon').innerHTML = `<i data-lucide="${world.icon}" aria-hidden="true"></i>`;
+    this.element('world-detail-number').textContent = `WORLD ${String(world.number).padStart(2, '0')}`;
+    this.element('world-detail-name').textContent = world.name;
+    this.element('world-detail-theme').textContent = world.theme;
+    this.element('world-detail-description').textContent = world.description;
+    this.element('world-complete-value').textContent = `${completedWorlds} / ${WORLDS.length}`;
+    this.element('world-progress-fill').style.setProperty('--progress', `${completedWorlds / WORLDS.length * 100}%`);
+    this.element('world-map-progress').textContent = `${clearedMaps} / ${world.mapIds.length} maps cleared`;
+    refreshIcons();
   }
 
   private showHome(updateRoute = true): void {
@@ -237,7 +274,7 @@ export class UI {
       return true;
     }
     if (this.levelModal.classList.contains('is-open')) {
-      if (!this.levelGrid.hidden) this.showWorldSelect();
+      if (!this.mapSelectView.hidden) this.showWorldSelect();
       else if (this.levelModalOpenedFromGame) this.levelModal.classList.remove('is-open');
       else this.showHome();
       return true;
@@ -267,9 +304,11 @@ export class UI {
     this.homeScreen.addEventListener('click', (event) => {
       const worldButton = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-home-world]');
       if (worldButton?.dataset.homeWorld) {
+        const worldId = worldButton.dataset.homeWorld as WorldId;
+        if (!this.isWorldUnlocked(worldId)) return;
         this.homeScreen.classList.remove('is-open');
         this.levelModalOpenedFromGame = false;
-        this.showMapSelect(worldButton.dataset.homeWorld as WorldId);
+        this.showMapSelect(worldId);
         this.levelModal.classList.add('is-open');
         return;
       }
@@ -327,6 +366,9 @@ export class UI {
 
     this.button('level-menu-button').addEventListener('click', () => this.openLevelSelect());
     this.button('selection-home-button').addEventListener('click', () => this.showHome());
+    this.button('selection-map-home-button').addEventListener('click', () => this.showHome());
+    this.button('selection-settings-button').addEventListener('click', () => this.openHomePanel('settings'));
+    this.button('world-view-maps-button').addEventListener('click', () => this.showMapSelect(this.selectedWorldId));
     this.button('world-back-button').addEventListener('click', () => this.showWorldSelect());
     this.button('help-button').addEventListener('click', () => this.toggleHelp(true));
     this.button('help-close-button').addEventListener('click', () => this.toggleHelp(false));
@@ -346,7 +388,7 @@ export class UI {
 
     this.worldGrid.addEventListener('click', (event) => {
       const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-world]');
-      if (button?.dataset.world) this.showMapSelect(button.dataset.world as WorldId);
+      if (button?.dataset.world) this.selectWorld(button.dataset.world as WorldId);
     });
 
     this.levelGrid.addEventListener('click', (event) => {
@@ -387,6 +429,11 @@ export class UI {
   }
 
   private deployLevel(levelId: string): void {
+    const level = LEVELS.find((entry) => entry.id === levelId);
+    if (!level || !this.isWorldUnlocked(level.worldId)) {
+      this.showWorldSelect();
+      return;
+    }
     this.game.startLevel(levelId);
     this.levelModal.classList.remove('is-open');
     this.levelModalOpenedFromGame = true;
@@ -572,17 +619,31 @@ export class UI {
   }
 
   private renderWorldGrid(): void {
-    this.worldGrid.innerHTML = WORLDS.map((world) => {
+    this.worldGrid.innerHTML = WORLDS.map((world, index) => {
       const stars = world.mapIds.reduce((sum, id) => sum + (this.progress.stars[id] ?? 0), 0);
+      const clearedMaps = world.mapIds.filter((id) => (this.progress.stars[id] ?? 0) > 0).length;
+      const unlocked = this.isWorldUnlocked(world.id);
+      const selected = this.selectedWorldId === world.id;
+      const prerequisite = index > 0 ? WORLDS[index - 1].name : '';
       return `
-        <button class="world-card" type="button" data-world="${world.id}" style="--world-color:${world.color}">
-          <img class="selection-world-art" src="${HOME_WORLD_ART[world.id]}" alt="" />
-          <span class="world-number">WORLD ${String(world.number).padStart(2, '0')}</span>
-          <span class="selection-world-copy">
-            <strong>${world.name}</strong>
-            <small>${world.theme}</small>
-            <p>${world.description}</p>
-            <span class="world-record"><b>★ ${stars} / 9</b><em>3 MAPS</em></span>
+        <button
+          class="world-card${selected ? ' is-selected' : ''}${unlocked ? '' : ' is-locked'}"
+          type="button"
+          data-world="${world.id}"
+          style="--world-color:${world.color}"
+          aria-label="${unlocked ? `${world.name}, ${clearedMaps} of 3 maps cleared` : `${world.name}, locked. Complete the previous world first`}"
+          ${unlocked ? '' : 'disabled'}
+        >
+          <span class="world-hex-body">
+            <img class="selection-world-art" src="${HOME_WORLD_ART[world.id]}" alt="" />
+            <span class="world-number">WORLD ${String(world.number).padStart(2, '0')}</span>
+            <span class="selection-world-copy">
+              <strong>${world.name}</strong>
+              <small>${world.theme}</small>
+              ${unlocked
+                ? `<span class="world-record"><b>★ ${stars} / 9</b><em>${clearedMaps} / 3 MAPS</em></span>`
+                : `<span class="world-lock"><i data-lucide="lock" aria-hidden="true"></i> Complete ${prerequisite}</span>`}
+            </span>
           </span>
         </button>
       `;
@@ -662,6 +723,9 @@ export class UI {
     this.element('home-energy-value').textContent = `${this.progress.energy}/100`;
     this.element('home-coins-value').textContent = this.progress.coins.toLocaleString();
     this.element('home-gems-value').textContent = this.progress.gems.toLocaleString();
+    this.element('selection-energy-value').textContent = `${this.progress.energy}/100`;
+    this.element('selection-coins-value').textContent = this.progress.coins.toLocaleString();
+    this.element('selection-gems-value').textContent = this.progress.gems.toLocaleString();
     this.element('home-power-value').textContent = this.progress.squadPower.toLocaleString();
     this.element('home-streak-value').textContent = this.progress.streak > 0
       ? `${this.progress.streak} ${this.progress.streak === 1 ? 'day' : 'days'}`
@@ -685,6 +749,13 @@ export class UI {
       const worldTotal = world.mapIds.reduce((sum, levelId) => sum + (this.progress.stars[levelId] ?? 0), 0);
       const target = this.homeScreen.querySelector<HTMLElement>(`[data-home-stars="${world.id}"]`);
       if (target) target.textContent = String(worldTotal);
+      const homeWorld = this.homeScreen.querySelector<HTMLButtonElement>(`[data-home-world="${world.id}"]`);
+      if (homeWorld) {
+        const unlocked = this.isWorldUnlocked(world.id);
+        homeWorld.disabled = !unlocked;
+        homeWorld.classList.toggle('is-locked', !unlocked);
+        homeWorld.title = unlocked ? world.name : `Complete ${WORLDS[world.number - 2]?.name ?? 'the previous world'} to unlock`;
+      }
     }
   }
 
