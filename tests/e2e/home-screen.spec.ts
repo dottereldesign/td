@@ -62,6 +62,8 @@ test('renders the illustrated home dashboard and opens a world', async ({ page }
       wordmarkFont: getComputedStyle(element.querySelector<HTMLElement>('.home-hero h1')!).fontFamily,
       premiumAudioGap: document.querySelector<HTMLElement>('.global-audio-toggle')!.getBoundingClientRect().left
         - element.querySelector<HTMLElement>('.home-premium-stores')!.getBoundingClientRect().right,
+      premiumCopyBadgeGap: element.querySelector<HTMLImageElement>('.store-badge--apple')!.getBoundingClientRect().left
+        - element.querySelector<HTMLElement>('.home-premium-copy')!.getBoundingClientRect().right,
     };
   });
 
@@ -75,6 +77,7 @@ test('renders the illustrated home dashboard and opens a world', async ({ page }
   expect(layout.sloganGap).toBeGreaterThanOrEqual(12);
   expect(layout.wordmarkFont).toContain('Titan One');
   expect(layout.premiumAudioGap).toBeGreaterThanOrEqual(6);
+  expect(layout.premiumCopyBadgeGap).toBeGreaterThanOrEqual(6);
 
   const quickActions = await home.locator('.home-quick-button').evaluateAll((buttons) => buttons.map((button) => {
     const buttonRect = button.getBoundingClientRect();
@@ -448,6 +451,7 @@ test('keeps the home dashboard usable on a phone', async ({ page }) => {
 
   const home = page.locator('#home-screen');
   await expect(page.getByRole('button', { name: 'Start adventure' })).toBeVisible();
+  await expect(page.locator('#home-hero')).toHaveAttribute('data-intro-state', 'complete', { timeout: 5_000 });
   await expect(home.locator('[data-home-world]')).toHaveCount(6);
   expect(await home.evaluate((element) => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1);
   const premium = home.locator('.home-premium');
