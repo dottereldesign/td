@@ -16,12 +16,12 @@
     <section class="home-screen home-screen--intro-smash is-open" id="home-screen" data-intro-state="running" aria-labelledby="home-title">
       <div class="home-vignette" aria-hidden="true"></div>
       <div class="home-shell">
-        <header class="home-topbar">
-          <button class="home-profile glass-panel" id="home-profile-button" type="button" data-home-panel="profile" aria-haspopup="dialog">
+        <header class="home-topbar" id="home-topbar">
+          <button class="home-profile glass-panel" id="home-profile-button" type="button" data-home-panel="profile" aria-haspopup="dialog" aria-controls="home-resources" aria-expanded="false">
             <span class="home-avatar"><img src="/src/assets/home/icons/profile-avatar.webp" alt="" /></span>
             <span class="home-profile-copy"><strong id="home-player-name">WizinoHero</strong><span><i data-lucide="star" aria-hidden="true"></i> Level <em id="home-player-level">1</em></span><span class="home-xp"><i id="home-xp-fill" style="--xp: 0%"></i></span></span>
           </button>
-          <div class="home-resources" aria-label="Player resources">
+          <div class="home-resources" id="home-resources" aria-label="Player resources">
             <button class="resource-chip resource-chip--energy" type="button" data-home-panel="profile"><i data-lucide="zap" aria-hidden="true"></i><strong id="home-energy-value">0/100</strong><span>+</span></button>
             <button class="resource-chip resource-chip--coins" type="button" data-home-panel="profile"><i data-lucide="coins" aria-hidden="true"></i><strong id="home-coins-value">0</strong><span>+</span></button>
             <button class="resource-chip resource-chip--gems" type="button" data-home-panel="profile"><i data-lucide="gem" aria-hidden="true"></i><strong id="home-gems-value">0</strong><span>+</span></button>

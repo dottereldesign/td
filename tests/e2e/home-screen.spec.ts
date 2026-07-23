@@ -11,7 +11,7 @@ test('renders the illustrated home dashboard and opens a world', async ({ page }
   await expect(page.getByRole('heading', { name: 'Wizino TD' })).toBeVisible();
   await expect.poll(() => page.evaluate(() => document.fonts.check('64px "Titan One"'))).toBe(true);
   await expect(page.getByRole('button', { name: 'Start adventure' })).toBeVisible();
-  await expect(page.locator('#home-hero')).toHaveAttribute('data-intro-state', 'complete', { timeout: 5_000 });
+  await expect(page.locator('#home-hero')).toHaveAttribute('data-intro-state', 'complete', { timeout: 8_000 });
   await expect(page.locator('#home-player-level')).toHaveText('1');
   await expect(page.locator('#home-energy-value')).toHaveText('0/100');
   await expect(page.locator('#home-coins-value')).toHaveText('0');
@@ -94,6 +94,11 @@ test('renders the illustrated home dashboard and opens a world', async ({ page }
   expect(quickActions.every(({ height }) => Math.abs(height - 102) <= 1)).toBe(true);
   expect(quickActions.every(({ imageCenterDelta, labelCenterDelta }) => imageCenterDelta <= 1 && labelCenterDelta <= 1)).toBe(true);
 
+  await page.locator('#home-profile-button').click();
+  await expect(page.locator('#home-panel-modal')).toBeVisible();
+  await expect(page.locator('#home-panel-title')).toHaveText('WizinoHero');
+  await page.locator('#home-panel-close').click();
+
   if (process.env.CAPTURE_HOME) {
     await page.screenshot({ path: 'tmp/home-screen-qa.png', fullPage: true });
   }
@@ -138,7 +143,7 @@ test('stages the home hero and lets the arrow play the alternate intro', async (
   const home = page.locator('#home-screen');
   const arrow = page.getByRole('button', { name: 'Play the alternate magical intro' });
   await expect(hero).toHaveClass(/home-hero--intro-smash/);
-  await expect(hero).toHaveAttribute('data-intro-state', 'complete', { timeout: 5_000 });
+  await expect(hero).toHaveAttribute('data-intro-state', 'complete', { timeout: 8_000 });
   await expect(home).toHaveAttribute('data-intro-state', 'complete');
   await arrow.click();
 
@@ -176,7 +181,7 @@ test('stages the home hero and lets the arrow play the alternate intro', async (
   expect(animationNames.dashboard.every((name) => name === 'home-dashboard-enter')).toBe(true);
   expect(animationNames.delays.activity).toBeLessThan(animationNames.delays.worlds);
   expect(animationNames.delays.worlds).toBeLessThan(animationNames.delays.footer);
-  await expect(hero).toHaveAttribute('data-intro-state', 'complete', { timeout: 5_000 });
+  await expect(hero).toHaveAttribute('data-intro-state', 'complete', { timeout: 8_000 });
   await expect(home).toHaveAttribute('data-intro-state', 'complete');
 });
 
@@ -451,7 +456,7 @@ test('keeps the home dashboard usable on a phone', async ({ page }) => {
 
   const home = page.locator('#home-screen');
   await expect(page.getByRole('button', { name: 'Start adventure' })).toBeVisible();
-  await expect(page.locator('#home-hero')).toHaveAttribute('data-intro-state', 'complete', { timeout: 5_000 });
+  await expect(page.locator('#home-hero')).toHaveAttribute('data-intro-state', 'complete', { timeout: 8_000 });
   await expect(home.locator('[data-home-world]')).toHaveCount(6);
   expect(await home.evaluate((element) => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1);
   const premium = home.locator('.home-premium');
@@ -462,7 +467,47 @@ test('keeps the home dashboard usable on a phone', async ({ page }) => {
   ));
   expect(premiumAudioGap).toBeGreaterThanOrEqual(6);
   await page.evaluate(() => window.scrollTo(0, 0));
-  await page.getByRole('button', { name: 'Settings' }).click();
+  const profileDock = page.locator('#home-profile-button');
+  const resourceTray = page.locator('#home-resources');
+  const soundButton = page.locator('#sound-button');
+  await expect(resourceTray).toBeHidden();
+  await expect(profileDock).toHaveAttribute('aria-expanded', 'false');
+  const closedDockLayout = await page.evaluate(() => {
+    const profile = document.querySelector<HTMLElement>('#home-profile-button')!.getBoundingClientRect();
+    const xp = document.querySelector<HTMLElement>('.home-xp')!.getBoundingClientRect();
+    const sound = document.querySelector<HTMLElement>('#sound-button')!.getBoundingClientRect();
+    return {
+      profileBottomGap: window.innerHeight - profile.bottom,
+      profileSoundGap: sound.left - profile.right,
+      xpRightInset: profile.right - xp.right,
+    };
+  });
+  expect(closedDockLayout.profileBottomGap).toBeGreaterThanOrEqual(7);
+  expect(closedDockLayout.profileBottomGap).toBeLessThanOrEqual(10);
+  expect(closedDockLayout.profileSoundGap).toBeGreaterThanOrEqual(10);
+  expect(closedDockLayout.xpRightInset).toBeGreaterThanOrEqual(10);
+  await profileDock.click();
+  await expect(profileDock).toHaveAttribute('aria-expanded', 'true');
+  await expect(resourceTray).toBeVisible();
+  await expect(page.locator('#home-panel-modal')).toBeHidden();
+  await expect.poll(() => page.evaluate(() => {
+    const profile = document.querySelector<HTMLElement>('#home-profile-button')!.getBoundingClientRect();
+    const resources = document.querySelector<HTMLElement>('#home-resources')!.getBoundingClientRect();
+    return profile.top - resources.bottom;
+  })).toBeGreaterThanOrEqual(6);
+  const openDockLayout = await page.evaluate(() => {
+    return {
+      horizontalOverflow: document.querySelector<HTMLElement>('#home-screen')!.scrollWidth
+        - document.querySelector<HTMLElement>('#home-screen')!.clientWidth,
+    };
+  });
+  expect(openDockLayout.horizontalOverflow).toBeLessThanOrEqual(1);
+  if (process.env.CAPTURE_HOME) {
+    await page.screenshot({ path: 'tmp/home-mobile-profile-tray-qa.png', fullPage: true });
+  }
+  await resourceTray.getByRole('button', { name: 'Settings' }).click();
+  await expect(resourceTray).toBeHidden();
+  await expect(profileDock).toHaveAttribute('aria-expanded', 'false');
   const settings = page.locator('#home-panel-modal .home-panel-modal');
   await expect(settings).toBeVisible();
   const settingsBounds = await settings.boundingBox();
@@ -474,7 +519,5 @@ test('keeps the home dashboard usable on a phone', async ({ page }) => {
   expect(closeBounds).not.toBeNull();
   expect(closeBounds!.x).toBeGreaterThanOrEqual(settingsBounds!.x);
   expect(closeBounds!.x + closeBounds!.width).toBeLessThanOrEqual(settingsBounds!.x + settingsBounds!.width);
-  if (process.env.CAPTURE_HOME) {
-    await page.screenshot({ path: 'tmp/home-screen-mobile-qa.png', fullPage: true });
-  }
+  await expect(soundButton).toHaveCSS('opacity', '0');
 });

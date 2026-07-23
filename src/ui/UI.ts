@@ -69,11 +69,15 @@ export class UI {
   private readonly levelGrid = this.element('level-grid');
   private readonly worldGrid = this.element('world-grid');
   private readonly homeScreen = this.element('home-screen');
+  private readonly homeTopbar = this.element('home-topbar');
+  private readonly homeProfileButton = this.button('home-profile-button');
+  private readonly homeResources = this.element('home-resources');
   private readonly homeHero = this.element('home-hero');
   private readonly homeStatus = this.element('home-status');
   private readonly homePanelModal = this.element('home-panel-modal');
   private readonly homePanelContent = this.element('home-panel-content');
   private readonly toastRegion = this.element('toast-region');
+  private readonly mobileHomeMedia = window.matchMedia('(max-width: 520px)');
 
   constructor(
     private readonly game: Game,
@@ -94,6 +98,7 @@ export class UI {
     this.renderLevelGrid();
     this.renderDamageMatrix();
     this.bindControls();
+    this.setMobileResourcesExpanded(false);
     this.updateSoundButton(this.soundMuted);
     refreshIcons();
     this.updateHomeProgress();
@@ -245,6 +250,7 @@ export class UI {
     if (this.game.phase === 'wave' && !this.game.paused) this.game.togglePause(true);
     this.levelModal.classList.remove('is-open');
     this.homeScreen.classList.add('is-open');
+    this.setMobileResourcesExpanded(false);
     this.updateHomeProgress();
     if (updateRoute) this.pushRoute('#/home');
   }
@@ -287,7 +293,25 @@ export class UI {
       else this.showHome();
       return true;
     }
+    if (this.homeTopbar.classList.contains('is-resources-open')) {
+      this.setMobileResourcesExpanded(false);
+      return true;
+    }
     return false;
+  }
+
+  private setMobileResourcesExpanded(open: boolean): void {
+    const isMobile = this.mobileHomeMedia.matches;
+    const expanded = isMobile && open;
+    this.homeTopbar.classList.toggle('is-resources-open', expanded);
+    this.homeProfileButton.setAttribute('aria-expanded', String(expanded));
+    if (isMobile) {
+      this.homeProfileButton.removeAttribute('aria-haspopup');
+      this.homeResources.setAttribute('aria-hidden', String(!expanded));
+    } else {
+      this.homeProfileButton.setAttribute('aria-haspopup', 'dialog');
+      this.homeResources.removeAttribute('aria-hidden');
+    }
   }
 
   private bindControls(): void {
@@ -311,8 +335,19 @@ export class UI {
       this.homeHero.dataset.introState = 'complete';
       this.homeScreen.dataset.introState = 'complete';
     }
+    this.mobileHomeMedia.addEventListener('change', () => this.setMobileResourcesExpanded(false));
     this.homeScreen.addEventListener('click', (event) => {
-      const worldButton = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-home-world]');
+      const target = event.target as HTMLElement;
+      const profileButton = target.closest<HTMLButtonElement>('#home-profile-button');
+      if (profileButton && this.mobileHomeMedia.matches) {
+        this.setMobileResourcesExpanded(!this.homeTopbar.classList.contains('is-resources-open'));
+        return;
+      }
+      if (this.mobileHomeMedia.matches && !target.closest('.home-topbar')) {
+        this.setMobileResourcesExpanded(false);
+      }
+
+      const worldButton = target.closest<HTMLButtonElement>('[data-home-world]');
       if (worldButton?.dataset.homeWorld) {
         const worldId = worldButton.dataset.homeWorld as WorldId;
         if (!this.isWorldUnlocked(worldId)) return;
@@ -323,13 +358,14 @@ export class UI {
         return;
       }
 
-      const panelButton = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-home-panel]');
+      const panelButton = target.closest<HTMLButtonElement>('[data-home-panel]');
       if (panelButton?.dataset.homePanel) {
+        this.setMobileResourcesExpanded(false);
         this.openHomePanel(panelButton.dataset.homePanel);
         return;
       }
 
-      const messageButton = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-home-message]');
+      const messageButton = target.closest<HTMLButtonElement>('[data-home-message]');
       if (!messageButton?.dataset.homeMessage) return;
       this.homeStatus.textContent = messageButton.dataset.homeMessage;
       this.homeStatus.classList.remove('is-visible');
@@ -384,6 +420,7 @@ export class UI {
     this.button('help-button').addEventListener('click', () => this.toggleHelp(true));
     this.button('help-close-button').addEventListener('click', () => this.toggleHelp(false));
     this.button('sound-button').addEventListener('click', () => {
+      this.setMobileResourcesExpanded(false);
       this.soundMuted = this.onSoundToggle();
       this.updateSoundButton(this.soundMuted);
     });
@@ -835,6 +872,7 @@ export class UI {
   }
 
   private openHomePanel(panel: string): void {
+    this.setMobileResourcesExpanded(false);
     const eyebrow = this.element('home-panel-eyebrow');
     const title = this.element('home-panel-title');
     const copy = this.element('home-panel-copy');
