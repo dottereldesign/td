@@ -459,6 +459,35 @@ test('keeps the home dashboard usable on a phone', async ({ page }) => {
   await expect(page.locator('#home-hero')).toHaveAttribute('data-intro-state', 'complete', { timeout: 8_000 });
   await expect(home.locator('[data-home-world]')).toHaveCount(6);
   expect(await home.evaluate((element) => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1);
+  const quickActionLayout = await home.locator('.home-quick-actions').evaluate((nav) => {
+    const navRect = nav.getBoundingClientRect();
+    const buttons = [...nav.querySelectorAll<HTMLElement>('.home-quick-button')];
+    const buttonRects = buttons.map((button) => button.getBoundingClientRect());
+    const badges = buttons.map((button) => {
+      const badge = button.querySelector<HTMLElement>('b');
+      return badge && !badge.hidden ? badge.getBoundingClientRect() : null;
+    });
+    return {
+      buttonCount: buttons.length,
+      rowSpread: Math.max(...buttonRects.map((rect) => rect.top)) - Math.min(...buttonRects.map((rect) => rect.top)),
+      columnGaps: buttonRects.slice(0, -1).map((rect, index) => buttonRects[index + 1].left - rect.right),
+      badgesInsideRail: badges.every((badge) => !badge || (
+        badge.top >= navRect.top
+        && badge.right <= navRect.right
+      )),
+      badgesClearNextCard: badges.every((badge, index) => (
+        !badge || !buttonRects[index + 1] || buttonRects[index + 1].left - badge.right >= 2
+      )),
+    };
+  });
+  expect(quickActionLayout.buttonCount).toBe(4);
+  expect(quickActionLayout.rowSpread).toBeLessThanOrEqual(1);
+  expect(quickActionLayout.columnGaps.every((gap) => gap >= 7)).toBe(true);
+  expect(quickActionLayout.badgesInsideRail).toBe(true);
+  expect(quickActionLayout.badgesClearNextCard).toBe(true);
+  if (process.env.CAPTURE_HOME) {
+    await home.locator('.home-quick-actions').screenshot({ path: 'tmp/home-mobile-quick-actions-qa.png' });
+  }
   const premium = home.locator('.home-premium');
   await premium.scrollIntoViewIfNeeded();
   const premiumAudioGap = await page.evaluate(() => (

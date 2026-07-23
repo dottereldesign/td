@@ -2293,7 +2293,11 @@ body.reduce-motion *, body.reduce-motion *::before, body.reduce-motion *::after 
   .home-hero h1 { font-size: clamp(58px, 20vw, 82px); }
   .home-play { width: 78%; }
   .home-intro-next { right: -2px; width: 36px; height: 36px; }
-  .home-quick-actions { grid-template-columns: repeat(2, 1fr); }
+  .home-quick-actions { width: 100%; padding: 8px 4px 0; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: 92px; gap: 8px; align-content: start; justify-self: stretch; }
+  .home-quick-button { padding: 4px 3px 7px; border-radius: 14px; }
+  .home-quick-button img { width: clamp(44px, 13vw, 52px); height: 52px; }
+  .home-quick-button strong { font-size: clamp(6.5px, 2vw, 8px); }
+  .home-quick-button b { top: -5px; right: -4px; width: 23px; height: 23px; border-width: 2px; font-size: 11px; }
   .home-feature-cards { grid-template-columns: 1fr; min-height: auto; }
   .home-feature-cards button { min-height: 200px; }
   .home-world-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: 250px; }
