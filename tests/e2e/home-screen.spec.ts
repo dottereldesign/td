@@ -25,7 +25,7 @@ test('renders the illustrated home dashboard and opens a world', async ({ page }
     return { source: style.borderImageSource, slice: style.borderImageSlice };
   }));
   expect(modalFrameStyles).toHaveLength(3);
-  expect(modalFrameStyles.every(({ source, slice }) => source.includes('modal-frame') && slice === '320')).toBe(true);
+  expect(modalFrameStyles.every(({ source, slice }) => source.includes('modal-frame') && slice === '342 334')).toBe(true);
 
   const layout = await home.evaluate((element) => {
     const images = [...element.querySelectorAll<HTMLImageElement>('img')];

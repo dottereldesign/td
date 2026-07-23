@@ -5,7 +5,8 @@
 - Runtime file: `src/assets/ui/frames/modal-frame.webp`
 - Source format: one square nine-slice frame containing four fixed corners,
   four compatible edge rails, and an empty transparent center.
-- Integration: CSS `border-image` with a 320-pixel source slice. The browser
+- Integration: CSS `border-image` with 342px top/bottom and 334px left/right
+  source slices, positioned just beyond the source artwork's corner cuffs. The browser
   preserves the corners and independently stretches the horizontal and vertical
   rails to fit each dialog.
 - Generation workflow: OpenAI built-in image generation, flat magenta chroma

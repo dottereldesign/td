@@ -2485,16 +2485,20 @@ body.reduce-motion *, body.reduce-motion *::before, body.reduce-motion *::after 
 /* Responsive magical nine-slice dialog frame --------------------------- */
 
 .modal {
-  --modal-frame-size: clamp(64px, 7.2vw, 84px);
-  --modal-frame-padding: clamp(46px, 4.7vw, 58px);
+  --modal-frame-size: clamp(96px, 9vw, 122px);
+  --modal-frame-padding: clamp(58px, 5.8vw, 76px);
   border: 10px solid transparent;
   border-image-source: url('./assets/ui/frames/modal-frame.webp');
-  border-image-slice: 320;
+  border-image-slice: 342 334;
   border-image-width: var(--modal-frame-size);
   border-image-outset: 5px;
-  border-image-repeat: stretch;
+  border-image-repeat: round;
   padding: var(--modal-frame-padding);
   background-clip: padding-box;
+}
+
+.modal::before {
+  content: none;
 }
 
 .modal-close {
@@ -2504,8 +2508,8 @@ body.reduce-motion *, body.reduce-motion *::before, body.reduce-motion *::after 
 
 @media (max-width: 600px) {
   .modal {
-    --modal-frame-size: clamp(50px, 16vw, 62px);
-    --modal-frame-padding: clamp(46px, 12vw, 52px);
+    --modal-frame-size: clamp(66px, 20vw, 78px);
+    --modal-frame-padding: clamp(50px, 14vw, 58px);
     border-width: 7px;
     border-image-outset: 2px;
   }
