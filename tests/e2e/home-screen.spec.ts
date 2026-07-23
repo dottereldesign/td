@@ -20,6 +20,12 @@ test('renders the illustrated home dashboard and opens a world', async ({ page }
   await expect(page.locator('#home-best-wave-value')).toHaveText('No waves');
   await expect(home.locator('.home-quick-button')).toHaveCount(4);
   await expect(home.locator('[data-home-world]')).toHaveCount(6);
+  const modalFrameStyles = await page.locator('.modal').evaluateAll((modals) => modals.map((modal) => {
+    const style = getComputedStyle(modal);
+    return { source: style.borderImageSource, slice: style.borderImageSlice };
+  }));
+  expect(modalFrameStyles).toHaveLength(3);
+  expect(modalFrameStyles.every(({ source, slice }) => source.includes('modal-frame') && slice === '320')).toBe(true);
 
   const layout = await home.evaluate((element) => {
     const images = [...element.querySelectorAll<HTMLImageElement>('img')];
@@ -287,6 +293,11 @@ test('keeps the home dashboard usable on a phone', async ({ page }) => {
   expect(settingsBounds).not.toBeNull();
   expect(settingsBounds!.x).toBeGreaterThanOrEqual(0);
   expect(settingsBounds!.x + settingsBounds!.width).toBeLessThanOrEqual(390);
+  expect(await settings.evaluate((element) => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1);
+  const closeBounds = await settings.getByRole('button', { name: 'Close' }).boundingBox();
+  expect(closeBounds).not.toBeNull();
+  expect(closeBounds!.x).toBeGreaterThanOrEqual(settingsBounds!.x);
+  expect(closeBounds!.x + closeBounds!.width).toBeLessThanOrEqual(settingsBounds!.x + settingsBounds!.width);
   if (process.env.CAPTURE_HOME) {
     await page.screenshot({ path: 'tmp/home-screen-mobile-qa.png', fullPage: true });
   }
