@@ -21,6 +21,11 @@ test('renders the illustrated home dashboard and opens a world', async ({ page }
   await expect(page.locator('#home-best-wave-value')).toHaveText('No waves');
   await expect(home.locator('.home-quick-button')).toHaveCount(4);
   await expect(home.locator('[data-home-world]')).toHaveCount(6);
+  const premium = home.locator('.home-premium');
+  await expect(premium).toContainText('Get premium!');
+  await expect(premium).toContainText('Unlock the full game on mobile');
+  await expect(premium).toContainText('no ads');
+  await expect(premium.locator('.home-premium-stores svg')).toHaveCount(2);
   const modalFrameStyles = await page.locator('.modal').evaluateAll((modals) => modals.map((modal) => {
     const style = getComputedStyle(modal);
     return { source: style.borderImageSource, slice: style.borderImageSlice };
@@ -51,6 +56,8 @@ test('renders the illustrated home dashboard and opens a world', async ({ page }
       sloganGap: element.querySelector<HTMLElement>('.home-hero p')!.getBoundingClientRect().top
         - element.querySelector<HTMLElement>('.home-hero h1')!.getBoundingClientRect().bottom,
       wordmarkFont: getComputedStyle(element.querySelector<HTMLElement>('.home-hero h1')!).fontFamily,
+      premiumAudioGap: document.querySelector<HTMLElement>('.global-audio-toggle')!.getBoundingClientRect().left
+        - element.querySelector<HTMLElement>('.home-premium-stores')!.getBoundingClientRect().right,
     };
   });
 
@@ -63,6 +70,7 @@ test('renders the illustrated home dashboard and opens a world', async ({ page }
   expect(layout.heroCenterDelta).toBeLessThanOrEqual(1);
   expect(layout.sloganGap).toBeGreaterThanOrEqual(12);
   expect(layout.wordmarkFont).toContain('Titan One');
+  expect(layout.premiumAudioGap).toBeGreaterThanOrEqual(6);
 
   const quickActions = await home.locator('.home-quick-button').evaluateAll((buttons) => buttons.map((button) => {
     const buttonRect = button.getBoundingClientRect();
@@ -115,24 +123,50 @@ test('stages the home hero and lets the arrow play the alternate intro', async (
   await page.goto('/');
 
   const hero = page.locator('#home-hero');
+  const home = page.locator('#home-screen');
   const arrow = page.getByRole('button', { name: 'Play the alternate magical intro' });
   await expect(hero).toHaveClass(/home-hero--intro-smash/);
   await expect(hero).toHaveAttribute('data-intro-state', 'complete', { timeout: 5_000 });
+  await expect(home).toHaveAttribute('data-intro-state', 'complete');
   await arrow.click();
 
   await expect(hero).toHaveClass(/home-hero--intro-magic/);
+  await expect(home).toHaveClass(/home-screen--intro-magic/);
   await expect(hero).toHaveAttribute('data-intro-state', 'running');
+  await expect(home).toHaveAttribute('data-intro-state', 'running');
   await expect(page.getByRole('button', { name: 'Replay the smash intro' })).toBeVisible();
-  const animationNames = await hero.evaluate((element) => ({
-    title: getComputedStyle(element.querySelector('h1 span')!).animationName,
-    play: getComputedStyle(element.querySelector<HTMLElement>('.home-play')!).animationName,
-    modes: [...element.querySelectorAll<HTMLElement>('.home-modes button')]
-      .map((button) => getComputedStyle(button).animationName),
-  }));
+  const animationNames = await home.evaluate((element) => {
+    const animation = (selector: string) => getComputedStyle(element.querySelector<HTMLElement>(selector)!).animationName;
+    const delay = (selector: string) => Number.parseFloat(getComputedStyle(element.querySelector<HTMLElement>(selector)!).animationDelay);
+    return {
+      title: animation('h1 span'),
+      play: animation('.home-play'),
+      modes: [...element.querySelectorAll<HTMLElement>('.home-modes button')]
+        .map((button) => getComputedStyle(button).animationName),
+      dashboard: [
+        '.home-profile',
+        '.home-resources > button',
+        '.home-quick-button',
+        '.home-feature-cards > button',
+        '.home-world-heading',
+        '.home-world',
+        '.home-footer > button',
+      ].map(animation),
+      delays: {
+        activity: delay('.home-quick-button'),
+        worlds: delay('.home-world'),
+        footer: delay('.home-footer > button'),
+      },
+    };
+  });
   expect(animationNames.title).toBe('home-title-magic-focus');
   expect(animationNames.play).toBe('home-play-magic-land');
   expect(animationNames.modes).toEqual(['home-mode-sweep-left', 'home-mode-sweep-right']);
+  expect(animationNames.dashboard.every((name) => name === 'home-dashboard-enter')).toBe(true);
+  expect(animationNames.delays.activity).toBeLessThan(animationNames.delays.worlds);
+  expect(animationNames.delays.worlds).toBeLessThan(animationNames.delays.footer);
   await expect(hero).toHaveAttribute('data-intro-state', 'complete', { timeout: 5_000 });
+  await expect(home).toHaveAttribute('data-intro-state', 'complete');
 });
 
 test('skips the staged motion when reduced motion is requested', async ({ page }) => {
@@ -140,8 +174,10 @@ test('skips the staged motion when reduced motion is requested', async ({ page }
   await page.goto('/');
 
   const hero = page.locator('#home-hero');
+  const home = page.locator('#home-screen');
   await expect(hero).toHaveAttribute('data-intro-state', 'complete');
-  const activeAnimations = await hero.evaluate((element) => (
+  await expect(home).toHaveAttribute('data-intro-state', 'complete');
+  const activeAnimations = await home.evaluate((element) => (
     [element, ...element.querySelectorAll('*')]
       .flatMap((target) => target.getAnimations())
       .filter((animation) => animation.playState === 'running').length
@@ -406,6 +442,14 @@ test('keeps the home dashboard usable on a phone', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Start adventure' })).toBeVisible();
   await expect(home.locator('[data-home-world]')).toHaveCount(6);
   expect(await home.evaluate((element) => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1);
+  const premium = home.locator('.home-premium');
+  await premium.scrollIntoViewIfNeeded();
+  const premiumAudioGap = await page.evaluate(() => (
+    document.querySelector<HTMLElement>('.global-audio-toggle')!.getBoundingClientRect().left
+      - document.querySelector<HTMLElement>('.home-premium-stores')!.getBoundingClientRect().right
+  ));
+  expect(premiumAudioGap).toBeGreaterThanOrEqual(6);
+  await page.evaluate(() => window.scrollTo(0, 0));
   await page.getByRole('button', { name: 'Settings' }).click();
   const settings = page.locator('#home-panel-modal .home-panel-modal');
   await expect(settings).toBeVisible();

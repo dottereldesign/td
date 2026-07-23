@@ -249,14 +249,18 @@ export class UI {
     const button = this.button('home-intro-next');
     this.homeIntroVariant = variant;
     this.homeHero.dataset.introState = 'running';
+    this.homeScreen.dataset.introState = 'running';
     this.homeHero.classList.remove('home-hero--intro-smash', 'home-hero--intro-magic');
-    void this.homeHero.offsetWidth;
+    this.homeScreen.classList.remove('home-screen--intro-smash', 'home-screen--intro-magic');
+    void this.homeScreen.offsetWidth;
     this.homeHero.classList.add(`home-hero--intro-${variant}`);
+    this.homeScreen.classList.add(`home-screen--intro-${variant}`);
     const nextIsMagic = variant === 'smash';
     button.setAttribute('aria-label', nextIsMagic ? 'Play the alternate magical intro' : 'Replay the smash intro');
     button.title = nextIsMagic ? 'Play alternate intro animation' : 'Replay smash intro animation';
     if (this.progress.settings.reducedMotion || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       this.homeHero.dataset.introState = 'complete';
+      this.homeScreen.dataset.introState = 'complete';
     }
   }
 
@@ -297,9 +301,11 @@ export class UI {
     });
     homeIntroNext.addEventListener('animationend', () => {
       this.homeHero.dataset.introState = 'complete';
+      this.homeScreen.dataset.introState = 'complete';
     });
     if (this.progress.settings.reducedMotion || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       this.homeHero.dataset.introState = 'complete';
+      this.homeScreen.dataset.introState = 'complete';
     }
     this.homeScreen.addEventListener('click', (event) => {
       const worldButton = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-home-world]');

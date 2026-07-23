@@ -1,5 +1,6 @@
 import {
   Activity,
+  Apple,
   Aperture,
   ArrowRight,
   ArrowUp,
@@ -47,6 +48,7 @@ import {
 
 const icons = {
   Activity,
+  Apple,
   Aperture,
   ArrowRight,
   ArrowUp,

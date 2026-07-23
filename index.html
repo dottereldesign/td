@@ -13,7 +13,7 @@
     <title>Wizino TD</title>
   </head>
   <body>
-    <section class="home-screen is-open" id="home-screen" aria-labelledby="home-title">
+    <section class="home-screen home-screen--intro-smash is-open" id="home-screen" data-intro-state="running" aria-labelledby="home-title">
       <div class="home-vignette" aria-hidden="true"></div>
       <div class="home-shell">
         <header class="home-topbar">
@@ -71,7 +71,23 @@
           <button type="button" data-home-panel="leaderboard"><i data-lucide="skull" aria-hidden="true"></i><span><small>Best wave</small><strong id="home-best-wave-value">No waves</strong></span></button>
           <button type="button" data-home-panel="leaderboard" aria-haspopup="dialog"><i data-lucide="trophy" aria-hidden="true"></i><strong>Leaderboards</strong></button>
           <button type="button" data-home-message="The Parents Learning Hub is coming soon."><i data-lucide="users" aria-hidden="true"></i><span><strong>Parents</strong><small>Learning hub</small></span></button>
-          <button class="home-premium" type="button" data-home-message="Premium rewards are coming soon."><i data-lucide="crown" aria-hidden="true"></i><span><strong>Get premium!</strong><small>Extra rewards · no ads</small></span></button>
+          <button
+            class="home-premium"
+            type="button"
+            aria-label="Get premium. Unlock the full game on mobile with every world, bonus rewards, and no ads."
+            data-home-message="Wizino TD for mobile is coming soon. Premium unlocks every world, bonus rewards, and removes ads."
+          >
+            <span class="home-premium-crown" aria-hidden="true"><i data-lucide="crown"></i></span>
+            <span class="home-premium-copy">
+              <strong>Get premium!</strong>
+              <small>Unlock the full game on mobile</small>
+              <em>All worlds · bonus rewards · no ads</em>
+            </span>
+            <span class="home-premium-stores" aria-hidden="true">
+              <span><i data-lucide="apple"></i><b>App Store</b></span>
+              <span><i data-lucide="play"></i><b>Google Play</b></span>
+            </span>
+          </button>
         </footer>
         <div class="home-status" id="home-status" role="status" aria-live="polite"></div>
       </div>
