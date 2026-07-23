@@ -280,22 +280,52 @@
         </section>
 
         <section class="map-select-view" id="map-select-view" hidden>
-          <div class="selection-topline"><span>WIZINO TD / LEARNING ADVENTURE</span><span>18 MAPS · 6 WORLDS</span></div>
-          <div class="selection-heading">
+          <header class="map-select-header">
+            <div class="selection-topline"><span>WIZINO TD / MAP SELECT</span><span id="map-select-summary">18 MAPS · 0 CLEARED</span></div>
+            <button class="map-back-button" id="world-back-button" type="button" aria-label="Back to world selection"><i data-lucide="arrow-left" aria-hidden="true"></i></button>
+          </header>
+          <div class="map-select-title">
+            <span class="map-world-icon" id="map-world-icon" aria-hidden="true"><i data-lucide="trees"></i></span>
             <div>
               <span class="eyebrow" id="select-eyebrow">ECOSYSTEMS AND NATURE</span>
               <h2 id="level-modal-title">Forest World</h2>
               <p id="select-copy">Select a map to deploy immediately.</p>
             </div>
-            <div class="selection-emblem" aria-hidden="true">WT</div>
           </div>
-          <div id="level-grid" class="level-grid"></div>
-          <div class="selection-footer">
-            <div class="selection-nav">
-              <button class="button button--ghost" id="selection-map-home-button" type="button">Home</button>
-              <button class="button button--ghost" id="world-back-button" type="button">All worlds</button>
-            </div>
-            <span><i data-lucide="mouse-pointer-2" aria-hidden="true"></i><span id="selection-hint">Select a map to deploy immediately.</span></span>
+
+          <div class="map-select-layout">
+            <section class="map-catalog" aria-label="Maps in this world">
+              <div id="level-grid" class="level-grid"></div>
+              <button class="map-home-button" id="selection-map-home-button" type="button">Back home</button>
+            </section>
+
+            <aside class="selected-map-panel" aria-live="polite">
+              <span class="selected-map-eyebrow">Selected map</span>
+              <div class="selected-map-title">
+                <span id="selected-map-number">1-1</span>
+                <h3 id="selected-map-name">Mossy Crossing</h3>
+                <b id="selected-map-mode">Guided</b>
+              </div>
+              <div class="selected-map-preview" id="selected-map-preview"></div>
+
+              <section class="selected-map-section">
+                <h4>About this map</h4>
+                <p id="selected-map-about">Protect a young woodland crossing while learning how every organism has a role.</p>
+              </section>
+
+              <section class="selected-map-section">
+                <h4>Educational focus</h4>
+                <div class="selected-map-focus" id="selected-map-focus"></div>
+              </section>
+
+              <div class="selected-map-stats">
+                <div><small>Difficulty</small><strong id="selected-map-difficulty">★☆☆</strong><em id="selected-map-difficulty-label">Beginner friendly</em></div>
+                <div><small>Best result</small><strong><i data-lucide="shield" aria-hidden="true"></i><span id="selected-map-best">No record</span></strong><em>Local device record</em></div>
+              </div>
+
+              <button class="selected-map-play" id="selected-map-play" type="button">Play selected map <i data-lucide="arrow-right" aria-hidden="true"></i></button>
+              <span class="selected-map-hint" id="selection-hint">Choose any map card to deploy immediately.</span>
+            </aside>
           </div>
         </section>
       </div>

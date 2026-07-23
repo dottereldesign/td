@@ -97,23 +97,28 @@ test('renders the illustrated home dashboard and opens a world', async ({ page }
   await expect(page.locator('#level-grid')).toBeVisible();
   await expect(page.locator('[data-level]')).toHaveCount(3);
   await expect(page.getByRole('button', { name: /Deploy to sector/i })).toHaveCount(0);
-  await expect(page.locator('#selection-hint')).toHaveText('Select a map to deploy immediately.');
+  await expect(page.locator('#selection-hint')).toHaveText('Choose any map card to deploy immediately.');
+  await expect(page.locator('#selected-map-name')).toHaveText('Mossy Crossing');
+  await expect(page.locator('.map-select-view .level-preview')).toHaveCount(4);
   await expect(page).toHaveURL(/#\/worlds\/forest\/levels$/);
 
   const levelLayout = await page.locator('[data-level]').evaluateAll((cards) => {
     const rects = cards.map((card) => card.getBoundingClientRect());
-    const xs = rects.map((rect) => rect.x);
     return {
       rows: new Set(rects.map((rect) => Math.round(rect.y))).size,
-      horizontalStagger: Math.max(...xs) - Math.min(...xs),
+      columns: new Set(rects.map((rect) => Math.round(rect.x))).size,
+      thirdCardStartsSecondRow: Math.abs(rects[2].x - rects[0].x) <= 1,
     };
   });
-  expect(levelLayout.rows).toBe(3);
-  expect(levelLayout.horizontalStagger).toBeLessThanOrEqual(10);
+  expect(levelLayout.rows).toBe(2);
+  expect(levelLayout.columns).toBe(2);
+  expect(levelLayout.thirdCardStartsSecondRow).toBe(true);
+  await page.locator('[data-level="forest-2"]').focus();
+  await expect(page.locator('#selected-map-name')).toHaveText('Sunpetal Grove');
   if (process.env.CAPTURE_HOME) {
     await page.screenshot({ path: 'tmp/level-select-page-qa.png', fullPage: true });
   }
-  await page.getByRole('button', { name: /Play Mossy Crossing/i }).click();
+  await page.locator('[data-level="forest-1"]').click();
   await expect(page.locator('#game-canvas')).toBeVisible();
   await expect(page).toHaveURL(/#\/play\/forest-1$/);
 });

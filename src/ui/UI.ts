@@ -37,6 +37,7 @@ const ATTACK_LABELS: Record<AttackType, string> = {
 
 export class UI {
   private selectedWorldId: WorldId;
+  private selectedLevelId: string;
   private progress: PlayerProgress;
   private soundMuted: boolean;
   private lastVictoryReward: VictoryReward | null = null;
@@ -83,6 +84,7 @@ export class UI {
     private readonly profiler?: PerformanceMonitor,
   ) {
     this.selectedWorldId = game.level.worldId;
+    this.selectedLevelId = game.level.id;
     this.progress = loadPlayerProgress();
     this.soundMuted = initialMuted;
     this.applyAudioSettings();
@@ -198,10 +200,12 @@ export class UI {
     this.levelModal.dataset.selectionView = 'maps';
     this.worldSelectView.hidden = true;
     this.mapSelectView.hidden = false;
+    this.mapSelectView.style.setProperty('--map-color', world.color);
     this.element('select-eyebrow').textContent = world.theme.toUpperCase();
     this.element('level-modal-title').textContent = world.name;
     this.element('select-copy').textContent = `${world.description} Select a map to deploy immediately.`;
-    this.element('selection-hint').textContent = 'Select a map to deploy immediately.';
+    this.element('selection-hint').textContent = 'Choose any map card to deploy immediately.';
+    if (!world.mapIds.includes(this.selectedLevelId)) this.selectedLevelId = world.mapIds[0];
     this.renderLevelGrid();
     if (updateRoute) this.pushRoute(`#/worlds/${worldId}/levels`);
   }
@@ -376,6 +380,7 @@ export class UI {
     this.button('selection-settings-button').addEventListener('click', () => this.openHomePanel('settings'));
     this.button('world-view-maps-button').addEventListener('click', () => this.showMapSelect(this.selectedWorldId));
     this.button('world-back-button').addEventListener('click', () => this.showWorldSelect());
+    this.button('selected-map-play').addEventListener('click', () => this.deployLevel(this.selectedLevelId));
     this.button('help-button').addEventListener('click', () => this.toggleHelp(true));
     this.button('help-close-button').addEventListener('click', () => this.toggleHelp(false));
     this.button('sound-button').addEventListener('click', () => {
@@ -400,7 +405,12 @@ export class UI {
     this.levelGrid.addEventListener('click', (event) => {
       const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-level]');
       if (!button?.dataset.level) return;
+      this.selectLevel(button.dataset.level);
       this.deployLevel(button.dataset.level);
+    });
+    this.levelGrid.addEventListener('focusin', (event) => {
+      const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-level]');
+      if (button?.dataset.level) this.selectLevel(button.dataset.level);
     });
 
     window.addEventListener('popstate', () => {
@@ -440,6 +450,7 @@ export class UI {
       this.showWorldSelect();
       return;
     }
+    this.selectedLevelId = level.id;
     this.game.startLevel(levelId);
     this.levelModal.classList.remove('is-open');
     this.levelModalOpenedFromGame = true;
@@ -618,9 +629,57 @@ export class UI {
   }
 
   private renderLevelGrid(): void {
-    this.levelGrid.innerHTML = LEVELS
-      .filter((level) => level.worldId === this.selectedWorldId)
-      .map((level) => this.levelCard(level)).join('');
+    const levels = LEVELS.filter((level) => level.worldId === this.selectedWorldId);
+    if (!levels.some((level) => level.id === this.selectedLevelId)) this.selectedLevelId = levels[0].id;
+    this.levelGrid.innerHTML = levels.map((level) => this.levelCard(level)).join('');
+    this.renderSelectedMap();
+    refreshIcons();
+  }
+
+  private selectLevel(levelId: string): void {
+    const level = LEVELS.find((entry) => entry.id === levelId && entry.worldId === this.selectedWorldId);
+    if (!level || level.id === this.selectedLevelId) return;
+    this.selectedLevelId = level.id;
+    this.levelGrid.querySelectorAll<HTMLButtonElement>('[data-level]').forEach((button) => {
+      const selected = button.dataset.level === level.id;
+      button.classList.toggle('is-selected', selected);
+      if (selected) button.setAttribute('aria-current', 'true');
+      else button.removeAttribute('aria-current');
+    });
+    this.renderSelectedMap();
+  }
+
+  private renderSelectedMap(): void {
+    const level = LEVELS.find((entry) => entry.id === this.selectedLevelId)
+      ?? LEVELS.find((entry) => entry.worldId === this.selectedWorldId)
+      ?? LEVELS[0];
+    const world = getWorld(level.worldId);
+    const stars = this.progress.stars[level.id] ?? 0;
+    const best = this.progress.bestLives[level.id];
+    const focusIcons = [world.icon, 'brain', 'sparkles'];
+    const focusTopics = world.learningFocus.split(',').map((topic) => topic.trim()).slice(0, 3);
+
+    this.element('map-world-icon').innerHTML = `<i data-lucide="${world.icon}" aria-hidden="true"></i>`;
+    this.element('map-select-summary').textContent = `${LEVELS.length} MAPS · ${LEVELS.filter((entry) => (this.progress.stars[entry.id] ?? 0) > 0).length} CLEARED`;
+    this.element('selected-map-number').textContent = level.number;
+    this.element('selected-map-name').textContent = level.name;
+    this.element('selected-map-mode').textContent = this.levelMode(level);
+    this.element('selected-map-preview').innerHTML = this.levelPreview(level, stars > 0 ? `${starGlyphs(stars)} CLEARED` : `RISK 0${level.difficulty}`);
+    this.element('selected-map-about').textContent = level.briefing;
+    this.element('selected-map-focus').innerHTML = focusTopics.map((topic, index) => `
+      <div>
+        <i data-lucide="${focusIcons[index]}" aria-hidden="true"></i>
+        <span><strong>${topic}</strong><small>Discover this idea through play.</small></span>
+      </div>
+    `).join('');
+    this.element('selected-map-difficulty').textContent = starGlyphs(level.difficulty);
+    this.element('selected-map-difficulty-label').textContent = level.difficulty === 1
+      ? 'Beginner friendly'
+      : level.difficulty === 2
+        ? 'Developing strategy'
+        : 'Advanced challenge';
+    this.element('selected-map-best').textContent = best === undefined ? 'No record' : `${best} HP`;
+    this.button('selected-map-play').setAttribute('aria-label', `Play selected map: ${level.name}`);
     refreshIcons();
   }
 
@@ -659,27 +718,39 @@ export class UI {
 
   private levelCard(level: LevelDefinition): string {
     const stars = this.progress.stars[level.id] ?? 0;
-    const points = level.path.map((cell) => `${cell.x + 0.5},${cell.y + 0.5}`).join(' ');
     const best = this.progress.bestLives[level.id];
+    const selected = level.id === this.selectedLevelId;
     return `
-      <button class="level-card" type="button" data-level="${level.id}" aria-label="Play ${level.name}">
-        <div class="level-preview" aria-hidden="true">
-          <svg viewBox="0 0 ${level.cols} ${level.rows}" preserveAspectRatio="none">
-            <polyline points="${points}" vector-effect="non-scaling-stroke" />
-            <circle cx="${level.path[0].x + 0.5}" cy="${level.path[0].y + 0.5}" r="0.36" />
-            <rect x="${level.path[level.path.length - 1].x + 0.15}" y="${level.path[level.path.length - 1].y + 0.15}" width="0.7" height="0.7" />
-          </svg>
-          <span>${stars > 0 ? `${starGlyphs(stars)} CLEARED` : `RISK 0${level.difficulty}`}</span>
+      <button class="level-card${selected ? ' is-selected' : ''}" type="button" data-level="${level.id}" aria-label="Play ${level.name}"${selected ? ' aria-current="true"' : ''}>
+        ${this.levelPreview(level, stars > 0 ? `${starGlyphs(stars)} CLEARED` : `RISK 0${level.difficulty}`)}
+        <div class="level-card-info">
+          <span class="level-number">${level.number}</span>
+          <div class="level-copy">
+            <strong>${level.name}</strong>
+            <small>${this.levelMode(level)}</small>
+          </div>
+          <div class="level-record"><span>${starGlyphs(stars)}</span><span>${best === undefined ? 'BEST: --' : `BEST: ${best} HP`}</span></div>
         </div>
-        <span class="level-number">${level.number}</span>
-        <div class="level-copy">
-          <strong>${level.name}</strong>
-          <small>${level.subtitle}</small>
-          <p>${level.briefing}</p>
-        </div>
-        <div class="level-record"><span>${starGlyphs(stars)}</span><span>${best === undefined ? 'NO RECORD' : `BEST ${best} HP`}</span></div>
       </button>
     `;
+  }
+
+  private levelPreview(level: LevelDefinition, status: string): string {
+    const points = level.path.map((cell) => `${cell.x + 0.5},${cell.y + 0.5}`).join(' ');
+    return `
+      <div class="level-preview" aria-hidden="true">
+        <svg viewBox="0 0 ${level.cols} ${level.rows}" preserveAspectRatio="none">
+          <polyline points="${points}" vector-effect="non-scaling-stroke" />
+          <circle cx="${level.path[0].x + 0.5}" cy="${level.path[0].y + 0.5}" r="0.36" />
+          <rect x="${level.path[level.path.length - 1].x + 0.15}" y="${level.path[level.path.length - 1].y + 0.15}" width="0.7" height="0.7" />
+        </svg>
+        <span>${status}</span>
+      </div>
+    `;
+  }
+
+  private levelMode(level: LevelDefinition): string {
+    return level.difficulty === 1 ? 'Guided' : level.difficulty === 2 ? 'Standard' : 'Challenge';
   }
 
   private showOutcome(outcome: 'victory' | 'defeat'): void {
