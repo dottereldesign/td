@@ -35,7 +35,6 @@ const ATTACK_LABELS: Record<AttackType, string> = {
 };
 
 export class UI {
-  private selectedLevelId: string;
   private selectedWorldId: WorldId;
   private progress: PlayerProgress;
   private soundMuted: boolean;
@@ -68,7 +67,6 @@ export class UI {
   private readonly homeStatus = this.element('home-status');
   private readonly homePanelModal = this.element('home-panel-modal');
   private readonly homePanelContent = this.element('home-panel-content');
-  private readonly deployButton = this.button('deploy-button');
   private readonly toastRegion = this.element('toast-region');
 
   constructor(
@@ -79,7 +77,6 @@ export class UI {
     initialMuted: boolean,
     private readonly profiler?: PerformanceMonitor,
   ) {
-    this.selectedLevelId = game.level.id;
     this.selectedWorldId = game.level.worldId;
     this.progress = loadPlayerProgress();
     this.soundMuted = initialMuted;
@@ -177,11 +174,11 @@ export class UI {
   private showWorldSelect(updateRoute = true): void {
     this.worldGrid.hidden = false;
     this.levelGrid.hidden = true;
-    this.deployButton.hidden = true;
     this.button('world-back-button').hidden = true;
     this.element('select-eyebrow').textContent = 'CHOOSE A LEARNING WORLD';
     this.element('level-modal-title').textContent = 'Where will you explore?';
     this.element('select-copy').textContent = 'Each world has three maps, six themed towers, and a different family of ideas to discover.';
+    this.element('selection-hint').textContent = 'Choose a world, then select a map.';
     this.renderWorldGrid();
     if (updateRoute) this.pushRoute('#/worlds');
   }
@@ -189,15 +186,13 @@ export class UI {
   private showMapSelect(worldId: WorldId, updateRoute = true): void {
     this.selectedWorldId = worldId;
     const world = getWorld(worldId);
-    const levels = LEVELS.filter((level) => level.worldId === worldId);
-    this.selectedLevelId = levels[0].id;
     this.worldGrid.hidden = true;
     this.levelGrid.hidden = false;
-    this.deployButton.hidden = false;
     this.button('world-back-button').hidden = false;
     this.element('select-eyebrow').textContent = world.theme.toUpperCase();
     this.element('level-modal-title').textContent = world.name;
-    this.element('select-copy').textContent = `${world.description} Choose one of three maps.`;
+    this.element('select-copy').textContent = `${world.description} Select a map to deploy immediately.`;
+    this.element('selection-hint').textContent = 'Select a map to deploy immediately.';
     this.renderLevelGrid();
     if (updateRoute) this.pushRoute(`#/worlds/${worldId}/levels`);
   }
@@ -328,11 +323,9 @@ export class UI {
 
     this.levelGrid.addEventListener('click', (event) => {
       const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-level]');
-      if (!button) return;
-      this.selectedLevelId = button.dataset.level ?? LEVELS[0].id;
-      this.renderLevelGrid();
+      if (!button?.dataset.level) return;
+      this.deployLevel(button.dataset.level);
     });
-    this.deployButton.addEventListener('click', () => this.deploySelectedLevel());
 
     window.addEventListener('popstate', () => {
       const levelRoute = window.location.hash.match(/^#\/worlds\/(forest|workshop|word|number|space|music)\/levels$/);
@@ -365,11 +358,11 @@ export class UI {
     });
   }
 
-  private deploySelectedLevel(): void {
-    this.game.startLevel(this.selectedLevelId);
+  private deployLevel(levelId: string): void {
+    this.game.startLevel(levelId);
     this.levelModal.classList.remove('is-open');
     this.levelModalOpenedFromGame = true;
-    this.pushRoute(`#/play/${this.selectedLevelId}`);
+    this.pushRoute(`#/play/${levelId}`);
     this.onLevelReset();
     this.renderTowerShop();
     this.toast(`${this.game.level.name} sector loaded.`, 'success');
@@ -570,12 +563,11 @@ export class UI {
   }
 
   private levelCard(level: LevelDefinition): string {
-    const selected = level.id === this.selectedLevelId;
     const stars = this.progress.stars[level.id] ?? 0;
     const points = level.path.map((cell) => `${cell.x + 0.5},${cell.y + 0.5}`).join(' ');
     const best = this.progress.bestLives[level.id];
     return `
-      <button class="level-card${selected ? ' is-selected' : ''}" type="button" data-level="${level.id}" aria-pressed="${selected}">
+      <button class="level-card" type="button" data-level="${level.id}" aria-label="Play ${level.name}">
         <div class="level-preview" aria-hidden="true">
           <svg viewBox="0 0 ${level.cols} ${level.rows}" preserveAspectRatio="none">
             <polyline points="${points}" vector-effect="non-scaling-stroke" />

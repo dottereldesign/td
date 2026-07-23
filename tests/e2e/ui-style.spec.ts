@@ -4,7 +4,7 @@ test('renders the Forest tower shop without broken art or overlap', async ({ pag
   await page.goto('/');
   await page.getByRole('button', { name: /Start adventure/i }).click();
   await page.getByRole('button', { name: /Forest World/i }).click();
-  await page.getByRole('button', { name: /Deploy to sector/i }).click();
+  await page.getByRole('button', { name: /Play Mossy Crossing/i }).click();
 
   const shop = page.locator('#tower-shop');
   const cards = shop.locator('.tower-card');

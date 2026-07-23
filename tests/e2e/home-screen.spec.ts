@@ -81,7 +81,8 @@ test('renders the illustrated home dashboard and opens a world', async ({ page }
   await expect(page.locator('#world-grid')).toBeHidden();
   await expect(page.locator('#level-grid')).toBeVisible();
   await expect(page.locator('[data-level]')).toHaveCount(3);
-  await expect(page.getByRole('button', { name: /Deploy to sector/i })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Deploy to sector/i })).toHaveCount(0);
+  await expect(page.locator('#selection-hint')).toHaveText('Select a map to deploy immediately.');
   await expect(page).toHaveURL(/#\/worlds\/forest\/levels$/);
 
   const levelLayout = await page.locator('[data-level]').evaluateAll((cards) => {
@@ -97,6 +98,9 @@ test('renders the illustrated home dashboard and opens a world', async ({ page }
   if (process.env.CAPTURE_HOME) {
     await page.screenshot({ path: 'tmp/level-select-page-qa.png', fullPage: true });
   }
+  await page.getByRole('button', { name: /Play Mossy Crossing/i }).click();
+  await expect(page.locator('#game-canvas')).toBeVisible();
+  await expect(page).toHaveURL(/#\/play\/forest-1$/);
 });
 
 test('persists guest settings and daily rewards in local browser storage', async ({ page }) => {
