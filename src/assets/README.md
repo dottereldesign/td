@@ -14,6 +14,10 @@ home/
   icons/        transparent profile and activity cutouts
   panels/       event and squad illustrations
   worlds/       portrait learning-world card art
+ui/
+  buttons/      transparent game UI controls
+  frames/       responsive nine-slice dialog frames
+  textures/     scalable panel and modal surface materials
 ```
 
 Path filenames begin with their numeric `N=1, E=2, S=4, W=8` bitmask. The

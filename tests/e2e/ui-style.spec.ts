@@ -48,3 +48,34 @@ test('renders the Forest tower shop without broken art or overlap', async ({ pag
   expect(layout.sidePanelFitsViewport).toBe(true);
   expect(layout.usesLiveBackdropBlur).toBe(false);
 });
+
+test('keeps the textured modal close control clear of the ornate frame', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await page.getByRole('button', { name: /Missions/i }).click();
+
+  const panel = page.locator('#home-panel-modal .modal');
+  const close = panel.getByRole('button', { name: 'Close' });
+  await expect(panel).toBeVisible();
+
+  const geometry = await panel.evaluate((modal) => {
+    const button = modal.querySelector<HTMLElement>('.modal-close')!;
+    const modalRect = modal.getBoundingClientRect();
+    const closeRect = button.getBoundingClientRect();
+    const modalStyle = getComputedStyle(modal);
+    const closeStyle = getComputedStyle(button);
+    return {
+      topInset: closeRect.top - modalRect.top,
+      rightInset: modalRect.right - closeRect.right,
+      texture: modalStyle.backgroundImage,
+      closeArtwork: closeStyle.backgroundImage,
+      closeWidth: closeRect.width,
+    };
+  });
+
+  expect(geometry.topInset).toBeGreaterThan(60);
+  expect(geometry.rightInset).toBeGreaterThan(60);
+  expect(geometry.texture).toContain('enchanted-vellum');
+  expect(geometry.closeArtwork).toContain('modal-close');
+  expect(geometry.closeWidth).toBeGreaterThanOrEqual(40);
+});

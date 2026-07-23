@@ -44,3 +44,52 @@ uniform #ff00ff. Corners must be crisp and clearly separable for nine-slice use.
 Avoid busy ornament, large gems, thick medieval stone, sci-fi circuitry, neon
 arcade styling, and asymmetry.
 ```
+
+# Modal close button
+
+## Production asset
+
+- Runtime file: `src/assets/ui/buttons/modal-close.webp`
+- Generation workflow: OpenAI built-in image generation using the modal frame
+  as a style reference, flat magenta chroma background, local soft-matte removal,
+  alpha trim, and 256px lossless WebP export.
+
+## Prompt
+
+```text
+Use case: stylized-concept
+Asset type: compact game UI close-button icon, intended to display at 38–48 CSS pixels
+Input images: Image 1 is a style and material reference only; do not edit or reproduce the whole frame
+Primary request: create one compact magical close-button medallion that belongs to the same UI family as Image 1
+Subject: a bold, unmistakable ivory X centered inside a small deep midnight-blue faceted crystal medallion, thin warm-gold rim, tiny cool-cyan edge glints
+Style/medium: polished hand-painted 3D mobile game UI icon, chunky readable silhouette, restrained detail at small size
+Composition/framing: single centered square-ish medallion, front-facing, symmetrical, generous empty padding around the entire object
+Lighting/mood: subtle enchanted glow, crisp highlights, premium but not flashy
+Scene/backdrop: perfectly flat solid #ff00ff chroma-key background for local removal; exactly uniform edge to edge
+Constraints: background must have no shadow, gradient, texture, reflection, floor plane, or lighting variation; no cast shadow outside the medallion; crisp edges; do not use #ff00ff in the icon; no words or extra symbols; no frame corner; no watermark
+Avoid: green, beige, oversized flourishes, thin X strokes, circular fantasy scene, busy detail, drop shadow extending into the background
+```
+
+# Enchanted vellum modal texture
+
+## Production asset
+
+- Runtime file: `src/assets/ui/textures/enchanted-vellum.webp`
+- Generation workflow: OpenAI built-in image generation using the modal frame
+  as a palette reference, then a 1024px optimized WebP export.
+
+## Prompt
+
+```text
+Use case: stylized-concept
+Asset type: seamless tileable game UI panel texture for modal interiors
+Input images: Image 1 is a palette and material-style reference only; do not reproduce the frame or its ornaments
+Primary request: create a seamless deep-midnight enchanted vellum texture for the inside surface of fantasy game dialogs, like premium magical scroll paper dyed navy
+Style/medium: hand-painted game UI material texture, refined and subtle, soft parchment fibers, minute paper grain, faint cloudy dye variation, extremely sparse tiny cool-blue magical dust flecks
+Composition/framing: square edge-to-edge material swatch, perfectly seamless on all four edges, uniform visual density, no focal point
+Lighting/mood: neutral diffuse material lighting, dark calm magical atmosphere
+Color palette: near-black navy, ink blue, muted indigo; very restrained cyan pinpricks; no bright areas
+Materials/textures: fine vellum fibers and gently mottled natural pigment, enough detail to feel tactile but quiet behind white UI text
+Constraints: seamless tiling; uniform average brightness edge to edge; no directional gradient; no vignette; no border; no frame; no corners; no symbols; no runes; no readable marks; no text; no objects; no lighting hotspot; no watermark
+Avoid: beige or brown parchment, leather, stone, wood, fabric weave, dramatic nebula, large stars, high contrast, busy detail, visible repeating motif
+```
