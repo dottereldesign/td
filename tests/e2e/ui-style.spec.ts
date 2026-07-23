@@ -55,7 +55,6 @@ test('keeps the textured modal close control clear of the ornate frame', async (
   await page.getByRole('button', { name: /Missions/i }).click();
 
   const panel = page.locator('#home-panel-modal .modal');
-  const close = panel.getByRole('button', { name: 'Close' });
   await expect(panel).toBeVisible();
 
   const geometry = await panel.evaluate((modal) => {
