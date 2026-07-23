@@ -36,10 +36,9 @@ export class AudioEngine {
   }
 
   unlock(): void {
-    if (this.muted) return;
     if (!this.context) this.context = new AudioContext();
     if (this.context.state === 'suspended') void this.context.resume();
-    if (this.musicEnabled && this.music?.paused) void this.music.play().catch(() => undefined);
+    if (!this.muted && this.musicEnabled && this.music?.paused) void this.music.play().catch(() => undefined);
     if (this.effectsEnabled) void this.preloadEffects();
   }
 
@@ -48,7 +47,7 @@ export class AudioEngine {
     this.effectsEnabled = channels.effectsEnabled;
     if (!this.musicEnabled) this.music?.pause();
     else if (!this.muted) this.unlock();
-    if (this.effectsEnabled && !this.muted) void this.preloadEffects();
+    if (this.effectsEnabled && this.context) void this.preloadEffects();
   }
 
   toggle(): boolean {
@@ -63,7 +62,7 @@ export class AudioEngine {
   }
 
   playUi(sound: UiSound): void {
-    if (this.muted || !this.effectsEnabled) return;
+    if (!this.effectsEnabled) return;
     this.unlock();
     const buffer = this.effectBuffers.get(sound);
     if (buffer) {
@@ -71,15 +70,16 @@ export class AudioEngine {
       return;
     }
     void this.loadEffect(sound).then((loaded) => {
-      if (loaded && !this.muted && this.effectsEnabled) this.playBuffer(sound, loaded);
+      if (loaded && this.effectsEnabled) this.playBuffer(sound, loaded);
     });
   }
 
-  getDiagnostics(): { muted: boolean; musicEnabled: boolean; effectsEnabled: boolean; loadedEffects: number; effectPlays: number; lastEffect: UiSound | null } {
+  getDiagnostics(): { muted: boolean; musicEnabled: boolean; effectsEnabled: boolean; contextState: AudioContextState | 'unavailable'; loadedEffects: number; effectPlays: number; lastEffect: UiSound | null } {
     return {
       muted: this.muted,
       musicEnabled: this.musicEnabled,
       effectsEnabled: this.effectsEnabled,
+      contextState: this.context?.state ?? 'unavailable',
       loadedEffects: this.effectBuffers.size,
       effectPlays: this.effectPlays,
       lastEffect: this.lastEffect,
@@ -87,7 +87,7 @@ export class AudioEngine {
   }
 
   handle(event: GameEvent): void {
-    if (this.muted || !this.effectsEnabled || !this.context) return;
+    if (!this.effectsEnabled || !this.context) return;
     if (event.type === 'tower-built') this.sequence([240, 360], 0.055, 0.045);
     if (event.type === 'tower-fired' && performance.now() - this.lastShotAt > 55) {
       this.lastShotAt = performance.now();
@@ -109,7 +109,7 @@ export class AudioEngine {
     type: OscillatorType = 'sine',
     delay = 0,
   ): void {
-    if (!this.context || this.muted || !this.effectsEnabled) return;
+    if (!this.context || !this.effectsEnabled) return;
     const start = this.context.currentTime + delay;
     const oscillator = this.context.createOscillator();
     const gain = this.context.createGain();
@@ -162,7 +162,7 @@ export class AudioEngine {
     const source = this.context.createBufferSource();
     const gain = this.context.createGain();
     source.buffer = buffer;
-    gain.gain.value = sound === 'confirm' ? 0.2 : sound === 'tower' ? 0.16 : 0.13;
+    gain.gain.value = sound === 'confirm' ? 0.26 : sound === 'tower' ? 0.22 : sound === 'click' ? 0.18 : 0.2;
     source.connect(gain);
     gain.connect(this.context.destination);
     source.start();

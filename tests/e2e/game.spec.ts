@@ -22,7 +22,7 @@ test('deploys a tower and starts a wave', async ({ page }) => {
   page.on('pageerror', (error) => pageErrors.push(error.message));
   await page.goto('/');
   await expect(page.getByRole('heading', { name: /Wizino TD/i })).toBeVisible();
-  await page.getByRole('button', { name: 'Enable sound' }).click();
+  await page.getByRole('button', { name: 'Enable music' }).click();
   await expect.poll(() => page.evaluate(() => window.__WIZINO_TD__.audio.getDiagnostics().loadedEffects)).toBe(7);
   if (process.env.CAPTURE_VISUAL) {
     await page.screenshot({ path: 'test-results/wizino-td-home.png', fullPage: true });

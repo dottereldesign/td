@@ -98,7 +98,7 @@ document.addEventListener('click', (event) => {
   else if (button.matches('.modal-close, #selection-home-button, #world-back-button, #outcome-levels')) sound = 'back';
   else if (button.matches('[data-home-panel], #level-menu-button, #help-button')) sound = 'open';
   audio.playUi(sound);
-});
+}, { capture: true });
 
 document.addEventListener('change', (event) => {
   if ((event.target as HTMLElement).matches('input[type="checkbox"]')) audio.playUi('toggle');

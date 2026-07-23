@@ -614,9 +614,9 @@ export class UI {
   private updateSoundButton(muted: boolean): void {
     const button = this.button('sound-button');
     button.innerHTML = `<i data-lucide="${muted ? 'volume-x' : 'volume-2'}" aria-hidden="true"></i>`;
-    button.setAttribute('aria-label', muted ? 'Enable sound' : 'Mute sound');
+    button.setAttribute('aria-label', muted ? 'Enable music' : 'Mute music');
     button.setAttribute('aria-pressed', String(!muted));
-    button.title = muted ? 'Enable sound' : 'Mute sound';
+    button.title = muted ? 'Enable music' : 'Mute music';
     refreshIcons();
   }
 
