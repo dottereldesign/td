@@ -11,6 +11,7 @@ test('renders the illustrated home dashboard and opens a world', async ({ page }
   await expect(page.getByRole('heading', { name: 'Wizino TD' })).toBeVisible();
   await expect.poll(() => page.evaluate(() => document.fonts.check('64px "Titan One"'))).toBe(true);
   await expect(page.getByRole('button', { name: 'Start adventure' })).toBeVisible();
+  await expect(page.locator('#home-hero')).toHaveAttribute('data-intro-state', 'complete', { timeout: 5_000 });
   await expect(page.locator('#home-player-level')).toHaveText('1');
   await expect(page.locator('#home-energy-value')).toHaveText('0/100');
   await expect(page.locator('#home-coins-value')).toHaveText('0');
@@ -101,6 +102,45 @@ test('renders the illustrated home dashboard and opens a world', async ({ page }
   await page.getByRole('button', { name: /Play Mossy Crossing/i }).click();
   await expect(page.locator('#game-canvas')).toBeVisible();
   await expect(page).toHaveURL(/#\/play\/forest-1$/);
+});
+
+test('stages the home hero and lets the arrow play the alternate intro', async ({ page }) => {
+  await page.setViewportSize({ width: 1512, height: 1008 });
+  await page.goto('/');
+
+  const hero = page.locator('#home-hero');
+  const arrow = page.getByRole('button', { name: 'Play the alternate magical intro' });
+  await expect(hero).toHaveClass(/home-hero--intro-smash/);
+  await expect(hero).toHaveAttribute('data-intro-state', 'complete', { timeout: 5_000 });
+  await arrow.click();
+
+  await expect(hero).toHaveClass(/home-hero--intro-magic/);
+  await expect(hero).toHaveAttribute('data-intro-state', 'running');
+  await expect(page.getByRole('button', { name: 'Replay the smash intro' })).toBeVisible();
+  const animationNames = await hero.evaluate((element) => ({
+    title: getComputedStyle(element.querySelector('h1 span')!).animationName,
+    play: getComputedStyle(element.querySelector<HTMLElement>('.home-play')!).animationName,
+    modes: [...element.querySelectorAll<HTMLElement>('.home-modes button')]
+      .map((button) => getComputedStyle(button).animationName),
+  }));
+  expect(animationNames.title).toBe('home-title-magic-focus');
+  expect(animationNames.play).toBe('home-play-magic-land');
+  expect(animationNames.modes).toEqual(['home-mode-sweep-left', 'home-mode-sweep-right']);
+  await expect(hero).toHaveAttribute('data-intro-state', 'complete', { timeout: 5_000 });
+});
+
+test('skips the staged motion when reduced motion is requested', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/');
+
+  const hero = page.locator('#home-hero');
+  await expect(hero).toHaveAttribute('data-intro-state', 'complete');
+  const activeAnimations = await hero.evaluate((element) => (
+    [element, ...element.querySelectorAll('*')]
+      .flatMap((target) => target.getAnimations())
+      .filter((animation) => animation.playState === 'running').length
+  ));
+  expect(activeAnimations).toBe(0);
 });
 
 test('persists guest settings and daily rewards in local browser storage', async ({ page }) => {

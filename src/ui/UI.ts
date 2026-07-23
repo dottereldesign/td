@@ -42,6 +42,7 @@ export class UI {
   private lastVictoryReward: VictoryReward | null = null;
   private lastShopSignature = '';
   private levelModalOpenedFromGame = false;
+  private homeIntroVariant: 'smash' | 'magic' = 'smash';
 
   private readonly levelName = this.element('level-name');
   private readonly livesValue = this.element('lives-value');
@@ -65,6 +66,7 @@ export class UI {
   private readonly levelGrid = this.element('level-grid');
   private readonly worldGrid = this.element('world-grid');
   private readonly homeScreen = this.element('home-screen');
+  private readonly homeHero = this.element('home-hero');
   private readonly homeStatus = this.element('home-status');
   private readonly homePanelModal = this.element('home-panel-modal');
   private readonly homePanelContent = this.element('home-panel-content');
@@ -206,6 +208,21 @@ export class UI {
     if (updateRoute) this.pushRoute('#/home');
   }
 
+  private playHomeIntro(variant: 'smash' | 'magic'): void {
+    const button = this.button('home-intro-next');
+    this.homeIntroVariant = variant;
+    this.homeHero.dataset.introState = 'running';
+    this.homeHero.classList.remove('home-hero--intro-smash', 'home-hero--intro-magic');
+    void this.homeHero.offsetWidth;
+    this.homeHero.classList.add(`home-hero--intro-${variant}`);
+    const nextIsMagic = variant === 'smash';
+    button.setAttribute('aria-label', nextIsMagic ? 'Play the alternate magical intro' : 'Replay the smash intro');
+    button.title = nextIsMagic ? 'Play alternate intro animation' : 'Replay smash intro animation';
+    if (this.progress.settings.reducedMotion || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      this.homeHero.dataset.introState = 'complete';
+    }
+  }
+
   hasOpenModal(): boolean {
     return document.querySelector('.modal-backdrop.is-open') !== null || this.levelModal.classList.contains('is-open');
   }
@@ -237,6 +254,16 @@ export class UI {
     };
     this.button('home-play-button').addEventListener('click', openAdventure);
     this.button('home-adventure-button').addEventListener('click', openAdventure);
+    const homeIntroNext = this.button('home-intro-next');
+    homeIntroNext.addEventListener('click', () => {
+      this.playHomeIntro(this.homeIntroVariant === 'smash' ? 'magic' : 'smash');
+    });
+    homeIntroNext.addEventListener('animationend', () => {
+      this.homeHero.dataset.introState = 'complete';
+    });
+    if (this.progress.settings.reducedMotion || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      this.homeHero.dataset.introState = 'complete';
+    }
     this.homeScreen.addEventListener('click', (event) => {
       const worldButton = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-home-world]');
       if (worldButton?.dataset.homeWorld) {
@@ -890,6 +917,7 @@ export class UI {
   private applySettings(): void {
     document.body.classList.toggle('reduce-motion', this.progress.settings.reducedMotion);
     document.body.classList.toggle('tips-disabled', !this.progress.settings.gameplayTips);
+    if (this.progress.settings.reducedMotion) this.homeHero.dataset.introState = 'complete';
   }
 
   private persistProgress(): void {
