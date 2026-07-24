@@ -28,8 +28,8 @@ test('renders the illustrated home dashboard and opens a world', async ({ page }
   await expect(premium).toContainText('no ads');
   const storeBadges = premium.locator('.home-premium-stores img');
   await expect(storeBadges).toHaveCount(2);
-  await expect(storeBadges.nth(0)).toHaveAttribute('src', '/assets/store-badges/download-on-app-store.webp');
-  await expect(storeBadges.nth(1)).toHaveAttribute('src', '/assets/store-badges/get-it-on-google-play.webp');
+  await expect(storeBadges.nth(0)).toHaveAttribute('src', /assets\/store-badges\/download-on-app-store\.webp$/);
+  await expect(storeBadges.nth(1)).toHaveAttribute('src', /assets\/store-badges\/get-it-on-google-play\.webp$/);
   const modalFrameStyles = await page.locator('.modal').evaluateAll((modals) => modals.map((modal) => {
     const style = getComputedStyle(modal);
     return { source: style.borderImageSource, slice: style.borderImageSlice };
@@ -585,6 +585,17 @@ test('uses the full-page adventure menu on phone and tablet layouts', async ({ p
   await expect(menu.locator('.home-footer > button')).toHaveCount(5);
   await expect(menu.locator('.home-premium')).toContainText('Get premium!');
   await expect(menu.locator('.home-world')).toHaveCount(6);
+  const criticalMenuImages = menu.locator([
+    '.home-event-card img',
+    '.home-squad-card img',
+    '.home-world:first-child img',
+    '.home-premium-stores img',
+  ].join(', '));
+  await expect(criticalMenuImages).toHaveCount(5);
+  await expect.poll(() => criticalMenuImages.evaluateAll((images) => images.every((image) => {
+    const artwork = image as HTMLImageElement;
+    return artwork.complete && artwork.naturalWidth >= 100 && artwork.naturalHeight >= 40;
+  }))).toBe(true);
 
   const menuLayout = await menu.evaluate((element) => {
     const worldGrid = element.querySelector<HTMLElement>('.home-world-grid')!;

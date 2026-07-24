@@ -3,7 +3,7 @@ import { UI_SOUND_PACKS, isUiSoundPack, type AudioChannels } from '../audio';
 import { DAMAGE_MATRIX, matchupLabel } from '../game/damage';
 import { Game } from '../game/Game';
 import { COLLECTION_CARD_BACK } from '../collectionAssets';
-import { HOME_WORLD_ART } from '../homeAssets';
+import { HOME_PANEL_ART, HOME_WORLD_ART } from '../homeAssets';
 import { refreshIcons } from '../icons';
 import { LEARNING_CARDS, STARTER_CARDS, type CollectionCard } from '../learningCards';
 import type { PerformanceMonitor } from '../performance/PerformanceMonitor';
@@ -353,11 +353,20 @@ export class UI {
   }
 
   private hydrateHomeMenuMedia(): void {
-    this.homeScreen.querySelectorAll<HTMLImageElement>('img[data-menu-src]').forEach((image) => {
-      const source = image.dataset.menuSrc;
+    this.homeScreen.querySelectorAll<HTMLImageElement>('img[data-menu-art]').forEach((image) => {
+      const asset = image.dataset.menuArt;
+      const source = asset && asset in HOME_PANEL_ART
+        ? HOME_PANEL_ART[asset as keyof typeof HOME_PANEL_ART]
+        : HOME_WORLD_ART[asset as WorldId];
       if (!source) return;
       image.src = source;
-      image.removeAttribute('data-menu-src');
+      image.removeAttribute('data-menu-art');
+    });
+    this.homeScreen.querySelectorAll<HTMLImageElement>('img[data-menu-public-src]').forEach((image) => {
+      const source = image.dataset.menuPublicSrc;
+      if (!source) return;
+      image.src = new URL(source, document.baseURI).href;
+      image.removeAttribute('data-menu-public-src');
     });
   }
 

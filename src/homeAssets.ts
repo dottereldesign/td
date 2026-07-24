@@ -1,5 +1,10 @@
 import type { WorldId } from './types';
 
+export const HOME_PANEL_ART = {
+  summerEvent: new URL('./assets/home/panels/summer-event.webp', import.meta.url).href,
+  squad: new URL('./assets/home/panels/squad.webp', import.meta.url).href,
+} as const;
+
 /** Static URLs let Vite fingerprint and include world artwork in production. */
 export const HOME_WORLD_ART: Record<WorldId, string> = {
   forest: new URL('./assets/home/worlds/forest.webp', import.meta.url).href,
